@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS liveticket;
+DROP DATABASE IF EXISTS `liveticket`;
 CREATE DATABASE liveticket;
 USE liveticket;
 
@@ -8,7 +8,7 @@ CREATE TABLE `member` (
     login_id VARCHAR(50) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(50) NOT NULL,
-    `role` V`am_jsp_2026_02``test``mysql`ARCHAR(20) DEFAULT 'ROLE_USER'
+    `role` VARCHAR(20) DEFAULT 'ROLE_USER'
 );
 
 # 3. Concert 
@@ -55,7 +55,7 @@ CREATE TABLE reservation (
 
 
 INSERT INTO `member` SET login_id = 'admin', `password` = 'admin123', `name` = '관리자', `role` = 'ROLE_ADMIN';
-INSERT INTO `member` SET login_id = 'user`information_schema``mysql`1', `password` = '1234', `name` = '홍길동', `role` = 'ROLE_USER';
+INSERT INTO `member` SET login_id = 'user1', `password` = '1234', `name` = '홍길동', `role` = 'ROLE_USER';
 
 INSERT INTO concert SET 
     title = 'New Concert', 
@@ -87,3 +87,11 @@ FROM article AS A
 INNER JOIN `member` AS M
 ON A.memberId = M.id
 WHERE A.id = ?
+
+SELECT R.*, S.`row_name` AS row_name, S.`col_number` AS `col_number`, SG.grade_name AS grade_name,C.title AS title, C.start_at AS start_at
+FROM `reservation` AS R
+INNER JOIN `seat` AS S
+ON R.`seat_id` = S.id
+INNER JOIN `seat_grade` AS SG
+ON S.`grade_id` = SG.id
+WHERE R.`member_id` = 2

@@ -49,15 +49,17 @@ public ReservationController(HttpServletRequest request, HttpServletResponse res
 
 public void showMyList() throws ServletException, IOException
 {
-    if (!isLogined()) 
-        return;
+   // if (!isLogined()) 
+   //    return;
     
-    int loginedMemberId = getLoginedMemberId();
+    //int loginedMemberId = getLoginedMemberId();
+    int loginedMemberId = 2;
     
     List<Map<String, Object>> myReservations = reservationService.getMyReservations(loginedMemberId);
     
-    
-	request.getRequestDispatcher("/jsp/Reservation/MyList.jsp").forward(request, response);
+	request.setAttribute("myReservations", myReservations);
+	
+	request.getRequestDispatcher("/jsp/Reservation/mylist.jsp").forward(request, response);
 
 }
 
