@@ -1,4 +1,4 @@
-package LiveTicket.Reservation;
+package LiveTicket.Concert;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -18,11 +18,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 
-public class ReservationController {
+public class ConcertController {
 private HttpServletRequest request;
 private HttpServletResponse response;
 private Connection conn;
-private ReservationService reservationService;
+private ConcertService  ConcertService;
 
 private boolean isLogined() throws IOException {
     HttpSession session = request.getSession();
@@ -35,31 +35,33 @@ private boolean isLogined() throws IOException {
 }
 
 private long getLoginedMemberId() {
-    return ((Number) request.getSession().getAttribute("loginedMemberId")).longValue();
+	return (long) request.getSession().getAttribute("loginedMemberId");
 }
 
 
-public ReservationController(HttpServletRequest request, HttpServletResponse response, Connection conn) {
+public ConcertController(HttpServletRequest request, HttpServletResponse response, Connection conn) {
 	this.request = request;
 	this.response = response;
 	this.conn = conn;
-	this.reservationService = new ReservationService(conn);
+	this.ConcertService = new ConcertService(conn);
 }
 
 
 public void showMyList() throws ServletException, IOException
 {
+	/*
+	 * if (!isLogined()) return;
+	 * 
+	 * long loginedMemberId = getLoginedMemberId();
+	 */
 	
-	  if (!isLogined()) return;
-	  
-	  long loginedMemberId = getLoginedMemberId();
-
+    int loginedMemberId = 2;
     
-    List<Map<String, Object>> myReservations = reservationService.getMyReservations(loginedMemberId);
+    List<Map<String, Object>> myReservations = ConcertService.getMyReservations(loginedMemberId);
     
 	request.setAttribute("myReservations", myReservations);
 	
-	request.getRequestDispatcher("/jsp/reservation/mylist.jsp").forward(request, response);
+	request.getRequestDispatcher("/jsp/Reservation/mylist.jsp").forward(request, response);
 
 }
 

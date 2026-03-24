@@ -12,6 +12,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import LiveTicket.Home.HomeController;
+import LiveTicket.Member.MemberController;
 import LiveTicket.Reservation.ReservationController;
 
 
@@ -38,11 +40,11 @@ public class DispatcherServlet extends HttpServlet {
 			HttpSession session = request.getSession();
 
 			boolean isLogined = false;
-			int loginedMemberId = -1;
+			long loginedMemberId = -1;
 			String loginedMemberName = null;
 			if (session.getAttribute("loginedMemberId") != null) {
 				isLogined = true;
-				loginedMemberId = (int) session.getAttribute("loginedMemberId");
+				loginedMemberId = ((Number) session.getAttribute("loginedMemberId")).longValue();
 				loginedMemberName = (String) session.getAttribute("loginedMemberName");
 			}
 			request.setAttribute("isLogined", isLogined);
@@ -60,30 +62,30 @@ public class DispatcherServlet extends HttpServlet {
 			String controllerName = reqUriBits[3]; 
 			String actionMethodName = reqUriBits[4]; 
 			
-			  if (controllerName.equals("Reservation")) { 
+			  if (controllerName.equals("reservation")) { 
 				  ReservationController reservationController =  new ReservationController(request, response, conn);
 			  
-			  if (actionMethodName.equals("MyList")) { 
+			  if (actionMethodName.equals("myList")) { 
 				  reservationController.showMyList();
 			  }
 
 			  }
-			/*
-			 * if (controllerName.equals("member")) { MemberController memberController =
-			 * new MemberController(request, response, conn);
-			 * 
-			 * if (actionMethodName.equals("login")) { memberController.showLogin(); } if
-			 * (actionMethodName.equals("doLogin")) { memberController.doLogin(); } if
-			 * (actionMethodName.equals("doLogout")) { memberController.doLogout(); } if
-			 * (actionMethodName.equals("join")) { memberController.showJoin(); } if
-			 * (actionMethodName.equals("doJoin")) { memberController.doJoin(); } }
-			 */
-			/*
-			 * if (controllerName.equals("home")) { HomeController homeController = new
-			 * HomeController(request, response, conn);
-			 * 
-			 * if (actionMethodName.equals("main")) { homeController.showMain(); } }
-			 */
+			
+			  if (controllerName.equals("member")) { MemberController memberController =
+			  new MemberController(request, response, conn);
+			  
+			  if (actionMethodName.equals("login")) { memberController.showLogin(); } 
+			  if (actionMethodName.equals("doLogin")) { memberController.doLogin(); } 
+			  if (actionMethodName.equals("doLogout")) { memberController.doLogout(); } 
+			  if (actionMethodName.equals("join")) { memberController.showJoin(); } 
+			  if (actionMethodName.equals("doJoin")) { memberController.doJoin(); } }
+			 
+			
+			  if (controllerName.equals("home")) { HomeController homeController = new
+			  HomeController(request, response, conn);
+			  
+			  if (actionMethodName.equals("main")) { homeController.showMain(); } }
+			 
 		} catch (SQLException e) {
 			System.out.println("에러 : " + e);
 		} finally {

@@ -5,9 +5,9 @@ USE liveticket;
 # 2. Member
 CREATE TABLE `member` (
     id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    `name` VARCHAR(50) NOT NULL,
     login_id VARCHAR(50) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
-    `name` VARCHAR(50) NOT NULL,
     `role` VARCHAR(20) DEFAULT 'ROLE_USER'
 );
 
@@ -55,7 +55,7 @@ CREATE TABLE reservation (
 
 
 INSERT INTO `member` SET login_id = 'admin', `password` = 'admin123', `name` = '관리자', `role` = 'ROLE_ADMIN';
-INSERT INTO `member` SET login_id = 'user1', `password` = '1234', `name` = '홍길동', `role` = 'ROLE_USER';
+INSERT INTO `member` SET login_id = 'whdtjr970717', `password` = '1234', `name` = '이종석', `role` = 'ROLE_USER';
 
 INSERT INTO concert SET 
     title = 'New Concert', 
@@ -94,4 +94,6 @@ INNER JOIN `seat` AS S
 ON R.`seat_id` = S.id
 INNER JOIN `seat_grade` AS SG
 ON S.`grade_id` = SG.id
+INNER JOIN `concert` AS C
+ON S.`concert_id` = C.id
 WHERE R.`member_id` = 2

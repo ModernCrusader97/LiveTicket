@@ -1,8 +1,9 @@
+<%@page import="java.math.BigInteger"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
     
 <%
-    Integer loginedMemberId =  (int) request.getAttribute("loginedMemberId");
+	Long loginedMemberId =  (Long) request.getAttribute("loginedMemberId");
     String loginedMemberName = (String) request.getAttribute("loginedMemberName");
     boolean isLogined = (boolean) request.getAttribute("isLogined");
 %>
@@ -21,6 +22,9 @@
 	<div>
 		현재
 	<%=loginedMemberName%>(<%=loginedMemberId%>)님 로그인 중
+	</div>
+		<div>
+		<a href="../reservation/myList">예매확인</a>
 	</div>
 	<div>
 		<a href="../member/doLogout">로그아웃</a>

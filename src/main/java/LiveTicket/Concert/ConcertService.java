@@ -1,4 +1,4 @@
-package LiveTicket.Reservation;
+package LiveTicket.Concert;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -18,14 +18,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 
-public class ReservationService {
+public class ConcertService {
 	private Connection conn;
 	
 	
-	public ReservationService(Connection conn) {
+	public ConcertService(Connection conn) {
         this.conn = conn;
     }
-	public List<Map<String, Object>> getMyReservations(long memberId) {
+	public List<Map<String, Object>> getMyReservations(int memberId) {
 
 		SecSql sql = SecSql.from("SELECT R.*, S.`row_name` AS row_name, S.`col_number` AS `col_number`, "
 				+ "SG.grade_name AS grade_name, "

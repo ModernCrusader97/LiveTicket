@@ -49,7 +49,7 @@ public class DBUtil {
 					Object value = rs.getObject(columnName);
 
 					if (value instanceof Long) {
-						int numValue = (int) (long) value;
+						long numValue = (long) value;
 						row.put(columnName, numValue);
 					} else if (value instanceof Timestamp) {
 						String dateValue = value.toString();
