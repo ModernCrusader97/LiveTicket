@@ -1,0 +1,51 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+    
+<%
+    Integer loginedMemberId =  (int) request.getAttribute("loginedMemberId");
+    String loginedMemberName = (String) request.getAttribute("loginedMemberName");
+    boolean isLogined = (boolean) request.getAttribute("isLogined");
+%>
+
+<style type="text/css">
+    .top-bar {
+        background-color: #f0f0f0;
+        padding: 10px;
+        text-align: right;
+    }
+    </style>
+    
+	<%
+	if (isLogined) {
+	%>
+	<div>
+		현재
+	<%=loginedMemberName%>(<%=loginedMemberId%>)님 로그인 중
+	</div>
+	<div>
+		<a href="../member/doLogout">로그아웃</a>
+	</div>
+	<div>
+	 
+	</div>
+	<%
+	}
+	%>
+	<%
+	if (!isLogined) {
+	%>
+	<div>
+	 
+	</div>
+	<div>
+		<a href="../member/login">로그인</a>
+	</div>
+	<div>
+		<a href="../member/join">회원가입</a>
+	</div>
+	<div>
+	 
+	</div>
+	<%
+	}
+	%>
