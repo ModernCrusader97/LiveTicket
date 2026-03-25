@@ -41,5 +41,15 @@ public class ReservationService {
     	
     	return DBUtil.selectRows(conn, sql);
 	}
+	
+	public List<Map<String, Object>> getAvailableSeats(long concertId) {
+        SecSql sql = SecSql.from("SELECT S.*, SG.grade_name, SG.price");
+        sql.append("FROM `seat` AS S");
+        sql.append("INNER JOIN `seat_grade` AS SG ON S.grade_id = SG.id");
+        sql.append("WHERE S.concert_id = ? AND S.`status` = 'AVAILABLE'", concertId);
+        sql.append("ORDER BY SG.price DESC, S.row_name ASC, S.col_number ASC");
 
+        return DBUtil.selectRows(conn, sql);
+    }
+	
 }

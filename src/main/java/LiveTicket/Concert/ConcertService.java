@@ -25,21 +25,30 @@ public class ConcertService {
 	public ConcertService(Connection conn) {
         this.conn = conn;
     }
-	public List<Map<String, Object>> getMyReservations(int memberId) {
-
-		SecSql sql = SecSql.from("SELECT R.*, S.`row_name` AS row_name, S.`col_number` AS `col_number`, "
-				+ "SG.grade_name AS grade_name, "
-				+ "C.title AS title, C.start_at AS start_at");
-    	sql.append("FROM `reservation` AS R");
-    	sql.append("INNER JOIN `seat` AS S");
-    	sql.append("ON R.`seat_id` = S.id");
-    	sql.append("INNER JOIN `seat_grade` AS SG");
-    	sql.append("ON S.`grade_id` = SG.id");
-    	sql.append("INNER JOIN `concert` AS C");
-    	sql.append("ON S.`concert_id` = C.id");
-    	sql.append("WHERE R.`member_id` = ?", memberId);
-    	
-    	return DBUtil.selectRows(conn, sql);
-	}
-
+	
+	public List<Map<String, Object>> getConcerts() {
+        SecSql sql = SecSql.from("SELECT * FROM concert");
+        sql.append(" ORDER BY start_at ASC"); // 날짜순 정렬
+        
+        return DBUtil.selectRows(conn, sql);
+    }
+	
+	public Map<String, Object> getConcertById(long id) {
+        SecSql sql = SecSql.from("SELECT * FROM concert");
+        sql.append(" WHERE id = ?", id);
+        
+        return DBUtil.selectRow(conn, sql);
+    }
+	
+	public List<Map<String, Object>> getRemainingSeats(long concertId) {
+        SecSql sql = SecSql.from("SELECT SG.grade_name, SG.price, COUNT(S.id) AS remain_count");
+        sql.append(" FROM seat_grade AS SG");
+        sql.append(" LEFT JOIN seat AS S");
+        sql.append(" ON SG.id = S.grade_id AND S.`status` = 'AVAILABLE'"); 
+        sql.append(" WHERE SG.concert_id = ?", concertId);
+        sql.append(" GROUP BY SG.id");
+        
+        return DBUtil.selectRows(conn, sql);
+    }
+	
 }

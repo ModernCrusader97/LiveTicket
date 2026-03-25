@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import LiveTicket.Concert.ConcertController;
 import LiveTicket.Home.HomeController;
 import LiveTicket.Member.MemberController;
 import LiveTicket.Reservation.ReservationController;
@@ -54,9 +55,28 @@ public class DispatcherServlet extends HttpServlet {
 			String requestUri = request.getRequestURI();
 
 			String[] reqUriBits = requestUri.split("/");
-			if (reqUriBits.length < 5) { 
+
+			if (reqUriBits.length < 5) {
+
+				String relativePath = "";
+				
+	
+				if (reqUriBits.length == 3) {
+					relativePath = "s/home/main";
+				} 
+
+				else {
+					int depth = reqUriBits.length - 4;
+					
+
+					for (int i = 0; i < depth; i++) {
+						relativePath += "../";
+					}
+					relativePath += "home/main";
+				}
+				
 				response.getWriter().append(
-						String.format("<script>alert('올바른 요청이 아님'); location.replace('../home/main');</script>"));
+						String.format("<script>alert('올바른 요청이 아님'); location.replace('%s');</script>", relativePath));
 				return;
 			}
 			String controllerName = reqUriBits[3]; 
@@ -66,25 +86,37 @@ public class DispatcherServlet extends HttpServlet {
 				  ReservationController reservationController =  new ReservationController(request, response, conn);
 			  
 			  if (actionMethodName.equals("myList")) { 
-				  reservationController.showMyList();
-			  }
+				  reservationController.showMyList();}
 
 			  }
 			
-			  if (controllerName.equals("member")) { MemberController memberController =
-			  new MemberController(request, response, conn);
-			  
-			  if (actionMethodName.equals("login")) { memberController.showLogin(); } 
-			  if (actionMethodName.equals("doLogin")) { memberController.doLogin(); } 
-			  if (actionMethodName.equals("doLogout")) { memberController.doLogout(); } 
-			  if (actionMethodName.equals("join")) { memberController.showJoin(); } 
-			  if (actionMethodName.equals("doJoin")) { memberController.doJoin(); } }
-			 
+			  else if (controllerName.equals("member")) { MemberController memberController =
+					  new MemberController(request, response, conn);
+					  
+					  if (actionMethodName.equals("login")) { memberController.showLogin(); } 
+					  if (actionMethodName.equals("doLogin")) { memberController.doLogin(); } 
+					  if (actionMethodName.equals("doLogout")) { memberController.doLogout(); } 
+					  if (actionMethodName.equals("join")) { memberController.showJoin(); } 
+					  if (actionMethodName.equals("doJoin")) { memberController.doJoin(); } 
+					  }
+					  
+			  else if (controllerName.equals("concert")) { 
+					ConcertController concertController = new ConcertController(request, response, conn);
+					
+					if (actionMethodName.equals("list")) { concertController.showList(); } 
+					if (actionMethodName.equals("detail")) { concertController.showDetail(); } 
+					}
 			
-			  if (controllerName.equals("home")) { HomeController homeController = new
+			  else if (controllerName.equals("home")) { HomeController homeController = new
 			  HomeController(request, response, conn);
 			  
-			  if (actionMethodName.equals("main")) { homeController.showMain(); } }
+			  if (actionMethodName.equals("main")) { homeController.showMain(); } 
+			  }
+			  else {
+				  	String homeUrl = request.getContextPath() + "/s/home/main";
+					response.getWriter().append(String.format("<script>alert('존재하지 않는 페이지입니다.'); location.replace('%s');</script>", homeUrl));
+					return;
+				}
 			 
 		} catch (SQLException e) {
 			System.out.println("에러 : " + e);

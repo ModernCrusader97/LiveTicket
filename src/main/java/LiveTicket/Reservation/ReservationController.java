@@ -60,7 +60,6 @@ public void showMyList() throws ServletException, IOException
 	request.setAttribute("myReservations", myReservations);
 	
 	request.getRequestDispatcher("/jsp/reservation/mylist.jsp").forward(request, response);
-
 }
 
 }

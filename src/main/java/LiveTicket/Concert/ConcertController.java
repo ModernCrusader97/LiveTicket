@@ -22,7 +22,7 @@ public class ConcertController {
 private HttpServletRequest request;
 private HttpServletResponse response;
 private Connection conn;
-private ConcertService  ConcertService;
+private ConcertService  concertService;
 
 private boolean isLogined() throws IOException {
     HttpSession session = request.getSession();
@@ -43,26 +43,35 @@ public ConcertController(HttpServletRequest request, HttpServletResponse respons
 	this.request = request;
 	this.response = response;
 	this.conn = conn;
-	this.ConcertService = new ConcertService(conn);
+	this.concertService = new ConcertService(conn);
 }
 
 
-public void showMyList() throws ServletException, IOException
+public void showList() throws ServletException, IOException
 {
-	/*
-	 * if (!isLogined()) return;
-	 * 
-	 * long loginedMemberId = getLoginedMemberId();
-	 */
-	
-    int loginedMemberId = 2;
+	List<Map<String, Object>> concerts = concertService.getConcerts();
     
-    List<Map<String, Object>> myReservations = ConcertService.getMyReservations(loginedMemberId);
-    
-	request.setAttribute("myReservations", myReservations);
-	
-	request.getRequestDispatcher("/jsp/Reservation/mylist.jsp").forward(request, response);
+    request.setAttribute("concerts", concerts);
+    request.getRequestDispatcher("/jsp/concert/list.jsp").forward(request, response);
 
 }
 
+
+public void showDetail() throws ServletException, IOException {
+    String idParam = request.getParameter("id");
+    if (idParam == null || idParam.isEmpty()) {
+        response.getWriter().append("<script>alert('잘못된 접근입니다.'); history.back();</script>");
+        return;
+    }
+    
+    long concertId = Long.parseLong(idParam);
+    
+    Map<String, Object> concert = concertService.getConcertById(concertId);
+    List<Map<String, Object>> remainSeats = concertService.getRemainingSeats(concertId);
+    
+    request.setAttribute("concert", concert);
+    request.setAttribute("remainSeats", remainSeats);
+    
+    request.getRequestDispatcher("/jsp/concert/detail.jsp").forward(request, response);
+}
 }

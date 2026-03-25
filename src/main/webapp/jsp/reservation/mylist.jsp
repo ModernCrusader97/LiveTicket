@@ -5,6 +5,7 @@
 <%
 List<Map<String, Object>> myReservations = (List<Map<String, Object>>) request.getAttribute("myReservations");
 boolean isEmpty = (boolean)myReservations.isEmpty();
+
 %>
 
 <!DOCTYPE html>
@@ -20,6 +21,7 @@ boolean isEmpty = (boolean)myReservations.isEmpty();
 </head>
 <body>
     <h2>내 예약 목록</h2>
+    	<a href="../home/main">메인으로 이동</a>
     <table>
         <thead>
             <tr>
