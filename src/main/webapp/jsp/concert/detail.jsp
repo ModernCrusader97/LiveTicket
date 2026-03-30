@@ -67,7 +67,7 @@
     </table>
     
     <br>
-    <a href="../reservation/book?concertId=<%= concert.get("id") %>">
+    <a href="../reservation/seatMap?concertId=<%= concert.get("id") %>">
         <button class="btn-book">좌석 선택 및 예매하기</button>
     </a>
     <button onclick="history.back()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">뒤로가기</button>

@@ -87,6 +87,8 @@ public class DispatcherServlet extends HttpServlet {
 			  
 			  if (actionMethodName.equals("myList")) { 
 				  reservationController.showMyList();}
+			  if (actionMethodName.equals("seatMap")) { reservationController.showSeatMap(); }
+			  if (actionMethodName.equals("doHold")) { reservationController.doHold(); }
 
 			  }
 			
