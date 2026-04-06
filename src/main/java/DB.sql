@@ -40,7 +40,7 @@ CREATE TABLE seat (
     col_number INT UNSIGNED NOT NULL,
     `status` VARCHAR(20) DEFAULT 'AVAILABLE',
     `version` INT UNSIGNED DEFAULT 0,
-    held_at DATETIME NOT NULL
+    held_at DATETIME
 );
 
 # 6. Reservation 

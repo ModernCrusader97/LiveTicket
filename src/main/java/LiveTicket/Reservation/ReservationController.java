@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import LiveTicket.SecSql;
+import LiveTicket.DTO.Seat;
 import LiveTicket.DBUtil;
 
 import jakarta.servlet.ServletException;
@@ -77,7 +78,7 @@ public class ReservationController {
 	    long concertId = Long.parseLong(concertIdParam);
 	    
 	    reservationService.releaseExpiredSeats();
-	    List<Map<String, Object>> seats = reservationService.getAllSeats(concertId);
+	    List<Seat> seats = reservationService.getAllSeats(concertId);
 	    
 	    request.setAttribute("seats", seats);
 	    request.setAttribute("concertId", concertId);

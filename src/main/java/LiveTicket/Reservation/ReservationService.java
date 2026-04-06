@@ -1,30 +1,37 @@
 package LiveTicket.Reservation;
 
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 import LiveTicket.SecSql;
+import LiveTicket.DTO.Seat;
 import LiveTicket.DBUtil;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import LiveTicket.DTO.Seat;
 
 
 public class ReservationService {
 	private Connection conn;
-	
+	private ReservationDao reservationDao;
 	
 	public ReservationService(Connection conn) {
         this.conn = conn;
+        this.reservationDao = new ReservationDao(conn);
     }
+	
+	public List<Seat> getAllSeats(long concertId) {
+        return reservationDao.getAllSeats(concertId);
+    }
+
+    public void releaseExpiredSeats() {
+        reservationDao.releaseExpiredSeats();
+    }
+
+    public boolean holdSeat(long seatId, int currentVersion) {
+        int affectedRows = reservationDao.updateSeatToPending(seatId, currentVersion);
+        return affectedRows > 0;
+    }
+    
 	public List<Map<String, Object>> getMyReservations(long memberId) {
 
 		SecSql sql = SecSql.from("SELECT R.*, S.`row_name` AS row_name, S.`col_number` AS `col_number`, "
@@ -41,37 +48,6 @@ public class ReservationService {
     	
     	return DBUtil.selectRows(conn, sql);
 	}
-	
-	public List<Map<String, Object>> getAllSeats(long concertId) {
-        SecSql sql = SecSql.from("SELECT S.*, SG.grade_name, SG.price");
-        sql.append("FROM `seat` AS S");
-        sql.append("INNER JOIN `seat_grade` AS SG ON S.grade_id = SG.id");
-        sql.append("WHERE S.concert_id = ?", concertId);
-        sql.append("ORDER BY SG.price DESC, S.row_name ASC, S.col_number ASC");
-
-        return DBUtil.selectRows(conn, sql);
-    }
-	
-    public boolean holdSeat(long seatId, int currentVersion) {
-        SecSql sql = SecSql.from("UPDATE `seat`");
-        sql.append("SET `status` = 'PENDING',");
-        sql.append("`version` = `version` + 1,");
-        sql.append("`held_at` = NOW()");
-        sql.append("WHERE id = ? AND `status` = 'AVAILABLE' AND `version` = ?", seatId, currentVersion);
-
-        int affectedRows = DBUtil.update(conn, sql);
-        return affectedRows > 0;
-    }
-    
-    public void releaseExpiredSeats() {
-        SecSql sql = SecSql.from("UPDATE `seat`");
-        sql.append("SET `status` = 'AVAILABLE',");
-        sql.append("`version` = `version` + 1,");
-        sql.append("`held_at` = NULL"); 
-        sql.append("WHERE `status` = 'PENDING' AND `held_at` < DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
-        
-        DBUtil.update(conn, sql);
-    }
     
 	public boolean confirmReservation(long memberId, long seatId) {
         try {
