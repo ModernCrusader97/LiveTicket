@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.ConcertRepository">
+
+	<select id="getConcerts"
+		resultType="com.example.demo.vo.Concert">
+		SELECT * FROM concert
+		ORDER BY start_at ASC
+	</select>
+
+	<select id="getConcertById"
+		resultType="com.example.demo.vo.Concert">
+		SELECT * FROM concert
+		WHERE id = #{id}
+	</select>
+
+	<select id="getRemainingSeats" resultType="map">
+		SELECT SG.grade_name, 
+		       SG.price, 
+		       COUNT(S.id) AS remain_count
+		FROM seat_grade AS SG
+		LEFT JOIN seat AS S 
+		       ON SG.id = S.grade_id 
+		      AND S.`status` = 'AVAILABLE'
+		WHERE SG.concert_id = #{concertId}
+		GROUP BY SG.id
+	</select>
+
+</mapper>
