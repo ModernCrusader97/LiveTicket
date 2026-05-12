@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.example.demo.vo.Concert;
+import com.example.demo.vo.Seat;
 
 @Mapper
 public interface ConcertRepository {
@@ -14,5 +15,5 @@ public interface ConcertRepository {
 
     Concert getConcertById(long id);
 
-    List<Map<String, Object>> getRemainingSeats(long concertId);
+    List<Seat> getRemainingSeats(long concertId);
 }

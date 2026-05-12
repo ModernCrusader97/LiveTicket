@@ -3,7 +3,6 @@
 <c:set var="pageTitle" value="MAIN PAGE"></c:set>
 <%@ include file="../common/head.jspf"%>
 <hr />
-<div>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Culpa exercitationem unde eum deserunt fugiat
-	cupiditate reprehenderit</div>
-<div>안녕하세요</div>
+<div>공연 리스트 추가</div>
+<div>베스트 리뷰 추가</div>
 <%@ include file="../common/foot.jspf"%>

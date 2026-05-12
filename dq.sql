@@ -1,100 +1,108 @@
+# 기존 데이터 초기화 (주의: 데이터가 모두 지워집니다)
 DROP DATABASE IF EXISTS `liveticket`;
-CREATE DATABASE liveticket;
-USE liveticket;
+CREATE DATABASE `liveticket`;
+USE `liveticket`;
 
-# 2. Member
+# 1. 회원 테이블
 CREATE TABLE `member` (
-    id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    `name` VARCHAR(50) NOT NULL,
-    login_id VARCHAR(50) NOT NULL UNIQUE,
-    `password` VARCHAR(255) NOT NULL,
-    `role` VARCHAR(20) DEFAULT 'ROLE_USER'
+    id INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    regDate DATETIME NOT NULL,
+    updateDate DATETIME NOT NULL,
+    loginId CHAR(30) NOT NULL UNIQUE,
+    loginPw CHAR(100) NOT NULL,
+    `authLevel` SMALLINT(2) UNSIGNED DEFAULT 3 COMMENT '권한 레벨 (3=일반, 7=관리자)',
+    `name` CHAR(20) NOT NULL,
+    nickname CHAR(20) NOT NULL,
+    cellphoneNum CHAR(20) NOT NULL,
+    email CHAR(20) NOT NULL,
+    delStatus TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+    delDate DATETIME DEFAULT NULL
 );
 
-# 3. Concert 
+# 2. 게시판 관련
+CREATE TABLE review (
+    id INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    regDate DATETIME NOT NULL,
+    updateDate DATETIME NOT NULL,
+    memberId INT(10) UNSIGNED NOT NULL,
+    concertId INT(10) UNSIGNED NOT NULL, -- 어떤 공연인가?
+    title VARCHAR(100) NOT NULL,         -- 제목 (유지!)
+    `body` TEXT NOT NULL,                -- 내용
+    rating INT(1) UNSIGNED DEFAULT 0,    -- 별점 (0~5)
+    `type` CHAR(20) NOT NULL,            -- EXPECT(기대평), REVIEW(후기)
+    orderId INT(10) UNSIGNED NULL,       -- 실제 예매 번호 (후기일 때만)
+    INDEX (concertId, `type`)
+);
+# 3. 공연 관련
 CREATE TABLE concert (
-    id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    id INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    performDate DATETIME NOT NULL,
+    startDate DATETIME NOT NULL,
+    endDate DATETIME NOT NULL,
     title VARCHAR(100) NOT NULL,
-    `description` TEXT,
-    start_at DATETIME NOT NULL,
-    booking_start_at DATETIME NOT NULL,
-    total_seats INT UNSIGNED,
-    MAX_ROWS INT UNSIGNED,
-    max_cols INT UNSIGNED
+    `body` TEXT,
+    startAt DATETIME NOT NULL,
+    bookingStartAt DATETIME NOT NULL,
+    totalSeats INT UNSIGNED,
+    maxRows INT UNSIGNED,
+    maxCols INT UNSIGNED
 );
 
-# 4. Seat_Grade
-CREATE TABLE seat_grade (
-    id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    concert_id BIGINT UNSIGNED NOT NULL,
-    grade_name VARCHAR(20) NOT NULL,
+# 4. 좌석 등급
+CREATE TABLE seatGrade (
+    id INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    regDate DATETIME NOT NULL,
+    updateDate DATETIME NOT NULL,
+    concertId INT(10) UNSIGNED NOT NULL,
+    `name` VARCHAR(20) NOT NULL,
     price INT UNSIGNED NOT NULL
 );
 
-# 5. Seat
+# 5. 좌석
 CREATE TABLE seat (
-    id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    concert_id BIGINT UNSIGNED NOT NULL,
-    grade_id BIGINT UNSIGNED NOT NULL,
-    row_name VARCHAR(10) NOT NULL,
-    col_number INT UNSIGNED NOT NULL,
+    id INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    regDate DATETIME NOT NULL,
+    updateDate DATETIME NOT NULL,
+    concertId INT(10) UNSIGNED NOT NULL,
+    memberId INT(10) UNSIGNED,
+    gradeId INT(10) UNSIGNED NOT NULL,
+    rowName VARCHAR(10) NOT NULL,
+    colNumber INT UNSIGNED NOT NULL,
     `status` VARCHAR(20) DEFAULT 'AVAILABLE',
     `version` INT UNSIGNED DEFAULT 0,
-    held_at DATETIME
+    heldAt DATETIME DEFAULT NULL
 );
 
-# 6. Reservation 
+# 6. 예약
 CREATE TABLE reservation (
-    id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    member_id BIGINT UNSIGNED NOT NULL,
-    seat_id BIGINT UNSIGNED NOT NULL UNIQUE,
-    reserved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    paid_price INT UNSIGNED NOT NULL,
+    id INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    regDate DATETIME NOT NULL,
+    updateDate DATETIME NOT NULL,
+    memberId INT(10) UNSIGNED NOT NULL,
+    `concertId` INT(10) UNSIGNED NOT NULL,
+    seatId INT(10) UNSIGNED NOT NULL,
+    paidPrice INT UNSIGNED NOT NULL,
     `status` VARCHAR(20) DEFAULT 'CONFIRMED'
 );
 
+# ---------------------------------------------------------
+# 테스트 데이터 입력 시작
+# ---------------------------------------------------------
 
+# 회원 데이터
+INSERT INTO `member` SET regDate = NOW(), updateDate = NOW(), loginId = 'admin', loginPw = 'admin', `authLevel` = 7, `name` = '관리자', nickname = '관리자', cellphoneNum = '01011112222', email = 'admin@test.com';
+INSERT INTO `member` SET regDate = NOW(), updateDate = NOW(), loginId = 'test1', loginPw = 'test1', `authLevel` = 3, `name` = '이종석', nickname = '종석닉네임', cellphoneNum = '01033334444', email = 'test1@test.com';
 
-INSERT INTO `member` SET login_id = 'admin', `password` = 'admin123', `name` = '관리자', `role` = 'ROLE_ADMIN';
-INSERT INTO `member` SET login_id = 'whdtjr970717', `password` = '1234', `name` = '이종석', `role` = 'ROLE_USER';
+# 공연 데이터
+INSERT INTO concert SET performDate = NOW(), startDate = NOW(), endDate = NOW()+2 ,title = '2026 임영웅 콘서트', `body` = '최고의 감동을 선사합니다.', startAt = '2026-05-10 19:00:00', bookingStartAt = NOW(), totalSeats = 4, maxRows = 2, maxCols = 2;
 
-INSERT INTO concert SET 
-    title = 'New Concert', 
-    `description` = 'asddsad.',
-    start_at = DATE_ADD(NOW(), INTERVAL 2 DAY), 
-    booking_start_at = NOW(), 
-    total_seats = 4, MAX_ROWS = 2, max_cols = 2;
+# 좌석 등급
+INSERT INTO seatGrade SET regDate = NOW(), updateDate = NOW(), concertId = 1, `name` = 'VIP', price = 150000;
+INSERT INTO seatGrade SET regDate = NOW(), updateDate = NOW(), concertId = 1, `name` = 'R', price = 120000;
 
+# 좌석 데이터
+INSERT INTO seat SET regDate = NOW(), updateDate = NOW(), concertId = 1, gradeId = 1, rowName = 'A', colNumber = 1;
+INSERT INTO seat SET regDate = NOW(), updateDate = NOW(), concertId = 1, gradeId = 1, rowName = 'A', colNumber = 2;
+INSERT INTO seat SET regDate = NOW(), updateDate = NOW(), concertId = 1, gradeId = 2, rowName = 'B', colNumber = 1;
+INSERT INTO seat SET regDate = NOW(), updateDate = NOW(), concertId = 1, gradeId = 2, rowName = 'B', colNumber = 2;
 
-INSERT INTO seat_grade SET concert_id = 1, grade_name = 'VIP', price = 150000;
-INSERT INTO seat_grade SET concert_id = 1, grade_name = 'R', price = 120000;
-
-INSERT INTO seat SET concert_id = 1, grade_id = 1, row_name = 'A', col_number = 1, `status` = 'AVAILABLE';
-INSERT INTO seat SET concert_id = 1, grade_id = 1, row_name = 'A', col_number = 2, `status` = 'AVAILABLE';
-INSERT INTO seat SET concert_id = 1, grade_id = 2, row_name = 'B', col_number = 1, `status` = 'AVAILABLE';
-INSERT INTO seat SET concert_id = 1, grade_id = 2, row_name = 'B', col_number = 2, `status` = 'AVAILABLE';
-
-UPDATE seat SET `status` = 'BOOKED' WHERE id = 1;
-INSERT INTO reservation SET member_id = 2, seat_id = 1, paid_price = 150000;
-
-SELECT * FROM `member`
-SELECT * FROM `concert`
-SELECT * FROM `reservation`
-SELECT * FROM `seat`
-SELECT * FROM `seat_grade`
-
-SELECT A.*, M.name AS writerName
-FROM article AS A
-INNER JOIN `member` AS M
-ON A.memberId = M.id
-WHERE A.id = ?
-
-SELECT R.*, S.`row_name` AS row_name, S.`col_number` AS `col_number`, SG.grade_name AS grade_name,C.title AS title, C.start_at AS start_at
-FROM `reservation` AS R
-INNER JOIN `seat` AS S
-ON R.`seat_id` = S.id
-INNER JOIN `seat_grade` AS SG
-ON S.`grade_id` = SG.id
-INNER JOIN `concert` AS C
-ON S.`concert_id` = C.id
-WHERE R.`member_id` = 2

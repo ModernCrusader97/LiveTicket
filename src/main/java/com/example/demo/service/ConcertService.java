@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.example.demo.repository.ConcertRepository;
 import com.example.demo.vo.Concert;
 import com.example.demo.vo.ResultData;
+import com.example.demo.vo.Seat;
 
 @Service
 public class ConcertService {
@@ -35,7 +36,7 @@ public class ConcertService {
 		return ResultData.from("S-1", id + "번 공연 조회 성공", "concert", concert);
 	}
 	
-	public List<Map<String, Object>> getRemainingSeats(long concertId) {
+	public List<Seat> getRemainingSeats(long concertId) {
         return concertRepository.getRemainingSeats(concertId);
     }
 }

@@ -13,13 +13,15 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Concert {
 	private long id;
-    private String regDate;
-    private String updateDate;
+    private String performDate;
+    private String startDate;
+    private String endDate;
     private String title;
-    private String startAt;
-    private String bookingStartAt;
     private int totalSeats;
     private int maxRows;
     private int maxCols;
-    private String description;
+    private String body;
+
+    private int reviewCount;
+	private int totalRating;
 }

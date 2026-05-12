@@ -13,6 +13,7 @@ import com.example.demo.util.Ut;
 import com.example.demo.vo.Concert;
 import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Rq;
+import com.example.demo.vo.Seat;
 
 @Controller
 public class UsrConcertController {
@@ -26,7 +27,8 @@ public class UsrConcertController {
 		
 		ResultData<List<Concert>> concertsRd = concertService.getConcerts();
 		if (concertsRd.isFail()) {
-			return Ut.jsHistoryBack(concertsRd.getResultCode() , concertsRd.getMsg());
+			rq.printHistoryBackNT( concertsRd.getMsg());
+			return null;
 		}
 
         model.addAttribute("concerts", concertsRd.getData1());
@@ -37,19 +39,19 @@ public class UsrConcertController {
     public String showDetail(Integer id, Model model) {
         if (Ut.isEmpty(id)) {
         	
-        	return Ut.jsHistoryBack("F-1", "콘서트 번호를 입력해주세요.");
+        	
+        	rq.printHistoryBackNT("콘서트 번호를 입력해주세요.");
+    		return null;
         }
 
-        // 2. 서비스 호출 및 검증
         ResultData<Concert> concertRd = concertService.getConcertById(id);
         
         if (concertRd.isFail()) {            
-            return Ut.jsHistoryBack(concertRd.getResultCode(), concertRd.getMsg());
+            rq.printHistoryBackNT( concertRd.getMsg());
         }
         
-        List<Map<String, Object>> remainSeats = concertService.getRemainingSeats(id);
+        List<Seat> remainSeats = concertService.getRemainingSeats(id);
         
-        // 4. 모델에 담아 JSP로 전달
         model.addAttribute("concert", concertRd.getData1());
         model.addAttribute("remainSeats", remainSeats);
         

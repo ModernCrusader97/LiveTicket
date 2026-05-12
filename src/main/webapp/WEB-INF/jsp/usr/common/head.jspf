@@ -28,8 +28,9 @@
 			<a href="/">LOGO</a>
 			<div class="flex-grow"></div>
 			<ul class="flex gap-x-10">
-				<li class="hover:underline"><a href="/">HOME</a></li>
-				<li class="hover:underline"><a href="../article/list">LIST</a></li>
+				<li class="hover:underline"><a href="../review/list">Community</a></li>
+				<li class="hover:underline"><a href="../reservation/mylist">My Reservation</a></li>
+				<li class="hover:underline"><a href="../concert/list">LIST</a></li>
 				<c:if test="${!rq.isLogined() }">
 					<li class="hover:underline"><a href="../member/login">LOGIN</a></li>
 					<li class="hover:underline"><a href="../member/join">JOIN</a></li>
