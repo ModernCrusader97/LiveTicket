@@ -3,11 +3,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>C.A.S.T. - 공연 및 좌석 커스텀 관리자</title>
+<title>C.A.S.T. - 공연 마스터 관리</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
-<link rel="stylesheet" href="/resource/common.css" />
 <style>
 body {
 	background-color: #0b0f19;
@@ -22,202 +21,348 @@ body {
 .seat-block {
 	transition: all 0.2s ease;
 }
-/* 비활성화된 통로 스타일 */
+
 .seat-blocked {
 	background-color: transparent !important;
 	border: 1px dashed #334155 !important;
 	opacity: 0.3;
 }
+
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+	background: #1e293b;
+	border-radius: 3px;
+}
 </style>
 </head>
-<body class="p-8">
+<body class="p-6">
 
-	<div class="max-w-7xl mx-auto">
-		<div class="flex items-center gap-4 mb-8 border-b border-blue-900 pb-4">
-			<h1 class="text-3xl font-bold tracking-wider text-cyan-400" style="text-shadow: 0 0 10px #00f0ff;">C.A.S.T. 공연 및
-				좌석 매트릭스 등록</h1>
+	<div class="max-w-[1400px] mx-auto">
+		<div class="flex items-center justify-between mb-6 border-b border-blue-900 pb-4">
+			<h1 class="text-3xl font-bold tracking-wider text-cyan-400">공연 마스터 & 회차 통합 등록</h1>
+			<span class="text-xs bg-cyan-950 border border-cyan-500/30 px-3 py-1 rounded-full text-cyan-400 font-mono">INTEGRATED
+				v1.0</span>
 		</div>
 
-		<c:if test="${not empty msg}">
-			<div class="alert alert-error mb-4 shadow-lg neon-border">${msg}</div>
-		</c:if>
+		<form id="concertForm" action="/admin/concert/create" method="post" enctype="multipart/form-data"
+			onsubmit="return prepareSubmit()">
+			<input type="hidden" name="disabledSeatsStr" id="disabledSeatsStr" value="">
+			<input type="hidden" name="schedulesData" id="schedulesData" value="">
+			<div id="hiddenFileContainer" class="hidden"></div>
 
-		<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
-			<form action="/admin/concert/create" method="post" enctype="multipart/form-data"
-				class="lg:col-span-5 space-y-4 bg-slate-900/50 p-6 rounded-xl border border-slate-800" onsubmit="prepareSubmit()">
-				<input type="hidden" name="disabledSeatsStr" id="disabledSeatsStr" value="">
+				<div class="bg-slate-900/40 p-5 rounded-xl border border-slate-800 flex flex-col gap-4">
+					<h3 class="text-lg font-bold text-cyan-400 mb-1">🎭 1. 공연 기본 정보 및 좌석 등급</h3>
 
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text text-slate-400">공연명</span>
-					</label>
-					<input type="text" name="title" class="input input-bordered input-primary bg-slate-950 text-white" required>
-				</div>
-
-				<div class="grid grid-cols-2 gap-4">
 					<div class="form-control">
-						<label class="label">
-							<span class="label-text text-slate-400">공연 일시</span>
+						<label class="label pt-0">
+							<span class="label-text text-slate-400 font-medium">공연 타이틀</span>
 						</label>
-						<input type="text" name="performDate" placeholder="YYYY-MM-DD" class="input input-bordered bg-slate-950">
+						<input type="text" name="title" placeholder="공연 타이틀"
+							class="input input-bordered input-primary bg-slate-950 text-white w-full" required>
 					</div>
-					<div class="form-control">
-						<label class="label">
-							<span class="label-text text-slate-400">시작 시간</span>
-						</label>
-						<input type="text" name="startAt" placeholder="YYYY-MM-DD HH:mm:ss" class="input input-bordered bg-slate-950">
+
+					<div class="grid grid-cols-2 gap-4">
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text text-slate-400 text-xs">예매 시작일시</span>
+							</label>
+							<input type="text" name="bookingStartAt" placeholder="YYYY-MM-DD HH:mm:ss"
+								class="input input-sm input-bordered bg-slate-950 text-center font-mono">
+						</div>
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text text-emerald-400 text-xs font-bold">자동 계산 가격 범위</span>
+							</label>
+							<input type="text" id="priceRangeDisplay" readonly
+								class="input input-sm input-bordered w-full bg-slate-900 text-center font-bold text-emerald-400"
+								placeholder="0원 ~ 0원">
+						</div>
 					</div>
-				</div>
 
-				<div class="grid grid-cols-3 gap-2">
-					<div class="form-control">
-						<label class="label">
-							<span class="label-text text-slate-400">가로 열 수 (Cols)</span>
-						</label>
-						<input type="number" name="maxCols" id="maxCols" value="12"
-							class="input input-bordered bg-slate-950 text-center font-bold text-cyan-400" oninput="renderLivePreview()">
-					</div>
-					<div class="form-control">
-						<label class="label">
-							<span class="label-text text-slate-400">대표 가격</span>
-						</label>
-						<input type="number" name="price" value="0" class="input input-bordered bg-slate-950">
-					</div>
-					<div class="form-control">
-						<label class="label">
-							<span class="label-text text-slate-400">마스터 ID</span>
-						</label>
-						<select name="parentId" class="select select-bordered bg-slate-950">
-							<option value="0">단독/마스터</option>
-							<c:forEach var="m" items="${masters}">
-								<option value="${m.id}">${m.title}</option>
-							</c:forEach>
-						</select>
-					</div>
-				</div>
+					<input type="file" name="posterFile"
+						class="file-input file-input-sm file-input-bordered file-input-primary bg-slate-950 w-full" required>
 
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text text-slate-400">티켓 오픈 일시</span>
-					</label>
-					<input type="text" name="bookingStartAt" placeholder="YYYY-MM-DD HH:mm:ss"
-						class="input input-bordered bg-slate-950">
-				</div>
+					<div class="divider border-slate-800/60 my-1">좌석 구조 및 등급</div>
 
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text text-slate-400">포스터 파일</span>
-					</label>
-					<input type="file" name="posterFile" class="file-input file-input-bordered file-input-primary bg-slate-950 w-full">
-				</div>
-
-				<div class="divider border-slate-800">좌석 등급 구역 매핑</div>
-
-				<div id="grades" class="space-y-3 max-h-60 overflow-y-auto pr-2">
-					<div class="grade p-3 bg-slate-950 rounded-lg border border-slate-800 flex gap-2 items-end">
-						<div class="w-1/3">
-							<label class="text-xs text-slate-500">등급명</label>
-							<input type="text" name="gradeNames" value="VIP" class="input input-xs input-bordered w-full"
+					<div class="grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-lg border border-slate-800">
+						<div>
+							<label class="block text-[10px] text-slate-500 mb-1 text-center">행 표기 방식</label>
+							<select id="rowNameType"
+								class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white"
+								onchange="renderLivePreview()">
+								<option value="ALPHA">알파벳 (A,B,C)</option>
+								<option value="NUM">숫자 (1,2,3)</option>
+							</select>
+						</div>
+						<div>
+							<label class="block text-[10px] text-slate-500 mb-1 text-center">시작 문자/번호</label>
+							<input type="text" id="rowStartChar" value="A"
+								class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-center text-xs text-white"
 								oninput="renderLivePreview()">
 						</div>
-						<div class="w-1/3">
-							<label class="text-xs text-slate-500">가격</label>
-							<input type="number" name="gradePrices" value="150000" class="input input-xs input-bordered w-full">
-						</div>
-						<div class="w-1/3">
-							<label class="text-xs text-slate-500">배정 행(Rows)</label>
-							<input type="number" name="gradeRowCounts" value="4"
-								class="input input-xs input-bordered w-full font-bold text-emerald-400" oninput="renderLivePreview()">
+						<div>
+							<label class="block text-[10px] text-slate-500 mb-1 text-center">가로 열 수</label>
+							<input type="number" name="maxCols" id="maxCols" value="12"
+								class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-center text-xs text-cyan-400"
+								oninput="renderLivePreview()">
 						</div>
 					</div>
+
+					<div id="grade-list-container" class="space-y-2 mt-2">
+						<div class="grade p-3 bg-slate-950 rounded border border-slate-800 flex items-center gap-3">
+							<div class="flex-1">
+								<input type="text" name="gradeNames" value="VIP석"
+									class="input input-sm input-bordered w-full bg-slate-900 text-sm" oninput="renderLivePreview()">
+							</div>
+							<div class="w-24">
+								<input type="number" name="gradePrices" value="150000"
+									class="input input-sm input-bordered w-full bg-slate-900 text-sm text-center" oninput="calculatePriceRange()">
+							</div>
+							<div class="w-16">
+								<input type="number" name="gradeRowCounts" value="3"
+									class="input input-sm input-bordered w-full text-center font-bold text-emerald-400 bg-slate-900"
+									oninput="renderLivePreview()">
+							</div>
+							<button type="button" class="btn-delete-grade bg-rose-950 text-rose-400 px-2 h-8 rounded text-xs">삭제</button>
+						</div>
+					</div>
+					<button type="button" onclick="addGradeRow()"
+						class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-sm rounded text-slate-300 mt-2">+ 구역 추가</button>
 				</div>
 
-				<div class="flex gap-2 pt-2">
-					<button type="button" class="btn btn-outline btn-xs btn-accent flex-1" onclick="addGrade()">+ 등급 구역 추가</button>
-					<button type="submit" class="btn btn-primary btn-sm px-6 text-white tracking-widest shadow-lg shadow-cyan-500/20">공연
-						매트릭스 생성</button>
-				</div>
-			</form>
-
-			<div class="lg:col-span-7 bg-slate-950 p-6 rounded-xl border border-slate-800 flex flex-col">
-				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-semibold text-slate-300">STAGE MATRIX PREVIEW</h2>
-					<span class="text-xs text-slate-500">💡 좌석을 클릭하면 비활성화(통로/구역 제외) 상태로 토글됩니다.</span>
-				</div>
-
-				<div
-					class="w-full bg-slate-800 text-center py-1 text-xs tracking-widest text-slate-400 rounded mb-8 shadow-inner font-bold border border-slate-700">
-					S C R E E N / S T A G E</div>
-
-				<div id="preview-matrix-container"
-					class="flex-grow flex flex-col gap-2 overflow-auto justify-center items-center p-4 min-h-[350px] bg-slate-900/30 rounded-lg border border-dashed border-slate-800">
+				<div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col">
+					<h3 class="text-lg font-bold text-emerald-400 mb-4">💺 좌석 배치도 미리보기</h3>
+					<div id="preview-matrix-container" class="flex-grow overflow-auto flex flex-col items-center"></div>
 				</div>
 			</div>
 
-		</div>
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+				<div class="bg-slate-900/40 p-5 rounded-xl border border-slate-800">
+					<h3 class="text-lg font-bold text-purple-400 mb-4">🧑‍🎤 2. 신규 출연진 등록</h3>
+
+					<input type="file" id="newArtistFile" class="hidden" onchange="previewArtistImage(this)">
+
+					<div class="flex gap-3 bg-slate-950 p-4 rounded-lg items-center">
+						<div id="artistPreviewBox" onclick="$('#newArtistFile').click()"
+							class="cursor-pointer w-20 h-20 bg-slate-900 border border-slate-700 rounded-full flex items-center justify-center text-[10px] text-slate-500 text-center overflow-hidden hover:border-purple-500 transition-colors">
+							프사 클릭</div>
+
+						<div class="flex-1 space-y-2">
+							<input type="text" id="newArtistName" placeholder="이름" class="input input-sm w-full bg-slate-900 text-white">
+							<input type="text" id="newArtistNote" placeholder="설명(한줄 소개)"
+								class="input input-sm w-full bg-slate-900 text-white">
+							<button type="button" onclick="registerArtistInline()"
+								class="btn btn-sm w-full bg-purple-700 text-white border-none">추가</button>
+						</div>
+					</div>
+				</div>
+				<div class="bg-slate-900/40 p-5 rounded-xl border border-slate-800">
+					<h3 class="text-lg font-bold text-amber-400 mb-4">📅 3. 회차별 스케줄</h3>
+					<div id="schedule-timeline-container" class="space-y-3"></div>
+					<button type="button" onclick="addScheduleTimeline()" class="btn btn-sm mt-3 w-full">+ 회차 추가</button>
+				</div>
+			</div>
+
+			<button type="submit" class="w-full btn btn-primary h-16 text-lg font-bold tracking-widest">🚀 공연 마스터 패키지 최종
+				등록</button>
+		</form>
 	</div>
 
-<div class="p-6 bg-slate-900 text-slate-100 rounded-xl border border-slate-800">
-    <h3 class="text-base font-bold mb-4 flex items-center gap-2">
-        <span class="w-2 h-4 bg-cyan-500 rounded-sm"></span> 좌석 등역 및 포맷 설정
-    </h3>
-    
-    <div class="grid grid-cols-3 gap-4 p-4 bg-slate-950 rounded-lg mb-6 border border-slate-800 text-sm">
-        <div>
-            <label class="block text-xs text-slate-400 mb-1">행 표기 방식</label>
-            <select id="rowNameType" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1" onchange="renderLivePreview()">
-                <option value="ALPHA">알파벳 (A, B, C...)</option>
-                <option value="NUM">숫자 (1, 2, 3...)</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs text-slate-400 mb-1">행 시작 문자/숫자</label>
-            <input type="text" id="rowStartChar" value="A" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-center" oninput="renderLivePreview()" placeholder="A 또는 1">
-        </div>
-        <div>
-            <label class="block text-xs text-slate-400 mb-1">최대 열(Column) 수</label>
-            <input type="number" id="maxCols" value="10" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-center" oninput="renderLivePreview()">
-        </div>
-    </div>
+	<script>
+// --- 가격 계산 로직 ---
+function calculatePriceRange() {
+    let prices = [];
+    $('input[name="gradePrices"]').each(function() {
+        let val = parseInt($(this).val());
+        if (!isNaN(val)) prices.push(val);
+    });
 
-    <div id="grade-list-container" class="space-y-3 mb-4">
-        <div class="grade flex items-center gap-2 p-3 bg-slate-800 rounded border border-slate-700">
-            <div class="flex flex-col gap-1">
-                <button type="button" class="btn-move-up p-1 text-xs bg-slate-700 hover:bg-slate-600 rounded">▲</button>
-                <button type="button" class="btn-move-down p-1 text-xs bg-slate-700 hover:bg-slate-600 rounded">▼</button>
-            </div>
-            <input type="text" name="gradeNames" value="VIP석" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-32" oninput="renderLivePreview()">
-            <input type="number" name="gradeRowCounts" value="3" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-20 text-center" oninput="renderLivePreview()"> <span class="text-sm text-slate-400">행</span>
-            <button type="button" class="btn-delete-grade ml-auto bg-rose-600/20 text-rose-400 border border-rose-500/30 px-2 py-1 rounded text-xs hover:bg-rose-600/40">삭제</button>
-        </div>
-    </div>
-    
-    <button type="button" onclick="addGradeRow()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm rounded-lg font-medium">+ 등역 추가</button>
-</div>
-
-<div id="preview-matrix-container" class="mt-6 p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center overflow-x-auto"></div>
-
-<script>
-// 비활성화된 좌석을 추적하는 공간 (기존 유지)
-const blockedSeats = new Set(); 
-
-// --- [기능 3 & 4] 행 이름을 가변 포맷에 맞춰 변환해주는 헬퍼 엔진 ---
-function getRowLabel(type, startChar, index) {
-    // index는 0부터 시작 (0이면 첫 번째 행)
-    if (type === "NUM") {
-        const startNum = parseInt(startChar) || 1;
-        return (startNum + index).toString();
+    if (prices.length > 0) {
+        let min = Math.min(...prices);
+        let max = Math.max(...prices);
+        $('#priceRangeDisplay').val(min.toLocaleString() + '원 ~ ' + max.toLocaleString() + '원');
     } else {
-        // 알파벳 변환 로직 (A=65, Z=90)
-        let baseCharCode = 65; // 기본값 'A'
-        if (startChar && startChar.length > 0) {
-            const cleanChar = startChar.trim().toUpperCase();
-            baseCharCode = cleanChar.charCodeAt(0);
+        $('#priceRangeDisplay').val('0원');
+    }
+}
+
+// --- 좌석 및 UI 관리 로직 ---
+const blockedSeats = new Set();
+const artistPool = [];
+let scheduleCount = 0;
+let inlineArtistIdx = 0;
+let tempArtistFile = null;
+
+function addGradeRow() {
+    $("#grade-list-container").append(`
+        <div class="grade p-3 bg-slate-950 rounded border border-slate-800 flex items-center gap-3 mt-2">
+            <div class="flex-1"><input type="text" name="gradeNames" value="일반석" class="input input-sm input-bordered w-full bg-slate-900 text-sm" oninput="renderLivePreview()"></div>
+            <div class="w-24"><input type="number" name="gradePrices" value="100000" class="input input-sm input-bordered w-full bg-slate-900 text-sm text-center" oninput="calculatePriceRange()"></div>
+            <div class="w-16"><input type="number" name="gradeRowCounts" value="3" class="input input-sm input-bordered w-full text-center font-bold text-emerald-400 bg-slate-900" oninput="renderLivePreview()"></div>
+            <button type="button" class="btn-delete-grade bg-rose-950 text-rose-400 px-2 h-8 rounded text-xs">삭제</button>
+        </div>
+    `);
+    calculatePriceRange();
+    renderLivePreview();
+}
+
+$(document).on('click', '.btn-delete-grade', function() {
+    $(this).closest('.grade').remove();
+    calculatePriceRange();
+    renderLivePreview();
+});
+if(artistPool.length === 0) {
+	artistPool.push({id: "1", name: "박강현", isNew: false});
+	artistPool.push({id: "2", name: "임규형", isNew: false});
+}
+
+// 1. 프로필 이미지 미리보기
+function previewArtistImage(input) {
+    if (input.files && input.files[0]) {
+        tempArtistFile = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            $('#artistPreviewBox').css({
+                'background-image': 'url(' + e.target.result + ')',
+                'background-size': 'cover',
+                'background-position': 'center'
+            }).text('');
         }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 2. 출연진 즉시 등록 (풀 업데이트)
+function registerArtistInline() {
+    const name = $('#newArtistName').val().trim();
+    if(!name) { alert('출연진 이름을 입력하세요.'); return; }
+
+    inlineArtistIdx++;
+    const tempId = "NEW_" + inlineArtistIdx;
+    
+    artistPool.push({ id: tempId, name: name + " (신규)", isNew: true });
+
+    if(tempArtistFile) {
+        const fileInput = document.getElementById('newArtistFile');
+        const clonedInput = fileInput.cloneNode(true);
+        clonedInput.id = "file_" + tempId;
+        clonedInput.name = "artistFiles";
+        $('#hiddenFileContainer').append(clonedInput);
+    }
+
+    refreshAllCastingSelects();
+
+    $('#newArtistName, #newArtistNote, #newArtistFile').val('');
+    $('#artistPreviewBox').css('background-image', 'none').text('프사 미리보기');
+    tempArtistFile = null;
+    alert(`[${name}] 아티스트가 추가되었습니다. 우측 스케줄에서 배역을 매핑하세요!`);
+}
+
+function refreshAllCastingSelects() {
+    $('.casting-artist-select').each(function() {
+        const currentVal = $(this).val();
+        $(this).empty().append('<option value="">-- 출연진 선택 --</option>');
+        artistPool.forEach(a => $(this).append(`<option value="${a.id}">${a.name}</option>`));
+        if(currentVal) $(this).val(currentVal);
+    });
+}
+
+// 3. 스케줄(회차) 타임라인 동적 생성
+function addScheduleTimeline() {
+    scheduleCount++;
+    const container = $('#schedule-timeline-container');
+    
+    // 입력 필드들이 포함된 HTML 구조
+    const card = $(`
+        <div class="schedule-card p-4 bg-slate-900/80 rounded-lg border border-slate-700 shadow-lg mb-4" data-index="${scheduleCount}">
+            <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
+                <span class="text-sm font-bold text-amber-400"># 회차 ${scheduleCount}</span>
+                <button type="button" class="text-slate-500 hover:text-rose-400 text-xs font-bold" onclick="$(this).closest('.schedule-card').remove();">삭제</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <input type="text" name="schedules[${scheduleCount}].title" placeholder="회차 제목 (예: 1회차 공연)" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500">
+                <input type="datetime-local" name="schedules[${scheduleCount}].performDate" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white">
+                <input type="text" name="schedules[${scheduleCount}].description" placeholder="회차 설명" class="col-span-1 md:col-span-2 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500">
+            </div>
+
+            <div class="bg-slate-950/50 p-2 rounded border border-slate-800">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-slate-400 font-medium ml-1">캐스팅 배역 설정</span>
+                    <button type="button" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded" onclick="addCastingRow(this)">+ 배역 추가</button>
+                </div>
+                <div class="schedule-casting-box space-y-1.5"></div>
+            </div>
+        </div>
+    `);
+    
+    container.append(card);
+    // 첫 기본 배역 추가
+    addCastingRow(card.find('.schedule-casting-box'));
+}
+
+function addCastingRow(element) {
+    // 💡 버튼이 들어왔으면 .schedule-casting-box를 찾고, 컨테이너가 바로 들어왔으면 그대로 사용
+    const box = $(element).hasClass('schedule-casting-box') ? $(element) : $(element).closest('.schedule-card').find('.schedule-casting-box');
+    
+    const row = $(`
+        <div class="casting-row flex gap-2 items-center bg-slate-900 p-1.5 rounded border border-slate-800">
+            <select class="casting-artist-select bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-white flex-1"></select>
+            <input type="text" class="casting-role-input bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-400 w-32 text-center" placeholder="배역">
+            <button type="button" class="text-slate-500 hover:text-rose-500 text-sm px-1 font-bold" onclick="$(this).parent().remove();">×</button>
+        </div>
+    `);
+    
+    // 현재 artistPool 데이터를 가져와 옵션 생성
+    row.find('.casting-artist-select').append('<option value="">-- 출연진 선택 --</option>');
+    artistPool.forEach(a => row.find('.casting-artist-select').append(`<option value="${a.id}">${a.name}</option>`));
+    
+    box.append(row);
+}
+
+// 4. 전송 패키징
+function prepareSubmit() {
+    $('#disabledSeatsStr').val(Array.from(blockedSeats).join(','));
+    const schedulesList = [];
+    let isValid = true;
+
+    $('.schedule-card').each(function() {
+        const scDate = $(this).find('.sc-date').val().trim();
+        const scBody = $(this).find('.sc-body').val().trim();
+        if(!scDate) { alert("일시를 입력해주세요."); isValid = false; return false; }
         
-        // Z(90)를 넘어갔을 때 AA, AB 형태로 확장되도록 설계된 정밀 알고리希
-        let targetCode = baseCharCode + index;
+        const castingsList = [];
+        $(this).find('.casting-row').each(function() {
+            const artistId = $(this).find('.casting-artist-select').val();
+            const roleName = $(this).find('.casting-role-input').val().trim();
+            if(artistId && roleName) castingsList.push({ artistId: artistId, roleName: roleName });
+        });
+        schedulesList.push({ performDate: scDate, body: scBody, castings: castingsList });
+    });
+
+    if(!isValid) return false;
+    if(schedulesList.length === 0) { alert("최소 1개의 일정을 등록해야 합니다."); return false; }
+
+    $('#schedulesData').val(JSON.stringify(schedulesList));
+    return true;
+}
+
+// 5. 좌석 매트릭스 엔진 (그대로 유지)
+function getRowLabel(type, startChar, index) {
+    if (type === "NUM") {
+        return (parseInt(startChar) || 1) + index + "";
+    } else {
+        let targetCode = (startChar.trim().toUpperCase().charCodeAt(0) || 65) + index;
         let label = "";
         while (targetCode >= 65) {
             let remainder = (targetCode - 65) % 26;
@@ -228,167 +373,108 @@ function getRowLabel(type, startChar, index) {
     }
 }
 
-// --- [기능 1] 등급 삭제 기능 ---
-$(document).on('click', '.btn-delete-grade', function() {
-    if ($('.grade').length <= 1) {
-        alert("최소 하나의 등급은 존재해야 합니다.");
-        return;
-    }
-    $(this).closest('.grade').remove();
-    renderLivePreview(); // 구조가 바뀌었으므로 프리뷰 리렌더링
-});
-
-// --- [기능 2] 등급 순서 변경 (위로 / 아래로) ---
-$(document).on('click', '.btn-move-up', function() {
-    const current = $(this).closest('.grade');
-    const previous = current.prev('.grade');
-    if (previous.length > 0) {
-        current.insertBefore(previous);
-        renderLivePreview();
-    }
-});
-
-$(document).on('click', '.btn-move-down', function() {
-    const current = $(this).closest('.grade');
-    const next = current.next('.grade');
-    if (next.length > 0) {
-        current.insertAfter(next);
-        renderLivePreview();
-    }
-});
-
-// 새 등급 행 추가 함수
-function addGradeRow() {
-    const container = $("#grade-list-container");
-    const newRow = $(`
-        <div class="grade flex items-center gap-2 p-3 bg-slate-800 rounded border border-slate-700">
-            <div class="flex flex-col gap-1">
-                <button type="button" class="btn-move-up p-1 text-xs bg-slate-700 hover:bg-slate-600 rounded">▲</button>
-                <button type="button" class="btn-move-down p-1 text-xs bg-slate-700 hover:bg-slate-600 rounded">▼</button>
-            </div>
-            <input type="text" name="gradeNames" value="일반석" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-32" oninput="renderLivePreview()">
-            <input type="number" name="gradeRowCounts" value="5" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-20 text-center" oninput="renderLivePreview()"> <span class="text-sm text-slate-400">행</span>
-            <button type="button" class="btn-delete-grade ml-auto bg-rose-600/20 text-rose-400 border border-rose-500/30 px-2 py-1 rounded text-xs hover:bg-rose-600/40">삭제</button>
-        </div>
-    `);
-    container.append(newRow);
+function toggleRow(gradeIdx, r, maxCols) {
+    let allBlocked = true;
+    for(let c=1; c<=maxCols; c++) { if(!blockedSeats.has(gradeIdx + "_" + r + "_" + c)) { allBlocked = false; break; } }
+    for(let c=1; c<=maxCols; c++) { const id = gradeIdx + "_" + r + "_" + c; if(allBlocked) blockedSeats.delete(id); else blockedSeats.add(id); }
     renderLivePreview();
 }
 
-// --- 좌석 매트릭스 렌더링 엔진 (요청 사항 반영 수정판) ---
-function renderLivePreview() {
-    const container = $("#preview-matrix-container");
-    container.empty();
+function toggleColumn(c) {
+    const gradeElements = $(".grade"); let allBlocked = true;
+    gradeElements.each(function(gradeIdx) {
+        const rows = parseInt($(this).find("input[name='gradeRowCounts']").val()) || 0;
+        for(let r=1; r<=rows; r++) { if(!blockedSeats.has(gradeIdx + "_" + r + "_" + c)) allBlocked = false; }
+    });
+    gradeElements.each(function(gradeIdx) {
+        const rows = parseInt($(this).find("input[name='gradeRowCounts']").val()) || 0;
+        for(let r=1; r<=rows; r++) { const id = gradeIdx + "_" + r + "_" + c; if(allBlocked) blockedSeats.delete(id); else blockedSeats.add(id); }
+    });
+    renderLivePreview();
+}
 
+$(document).on('click', '.btn-delete-grade', function() {
+    if ($('.grade').length <= 1) { alert("최소 하나의 구역은 있어야 합니다."); return; }
+    $(this).closest('.grade').remove(); renderLivePreview();
+});
+
+function addGradeRow() {
+    $("#grade-list-container").append(`
+        <div class="grade p-3 bg-slate-950 rounded border border-slate-800 flex items-center gap-3 mt-2">
+            <div class="flex-1"><input type="text" name="gradeNames" value="일반석" class="input input-sm input-bordered w-full bg-slate-900 text-sm" oninput="renderLivePreview()"></div>
+            <div class="w-24"><input type="number" name="gradePrices" value="100000" class="input input-sm input-bordered w-full bg-slate-900 text-sm text-center"></div>
+            <div class="w-16"><input type="number" name="gradeRowCounts" value="3" class="input input-sm input-bordered w-full text-center font-bold text-emerald-400 bg-slate-900" oninput="renderLivePreview()"></div>
+            <button type="button" class="btn-delete-grade bg-rose-950/40 text-rose-400 border border-rose-900/50 px-2 h-8 rounded text-xs hover:bg-rose-900/60">삭제</button>
+        </div>
+    `);
+    renderLivePreview();
+}
+
+function renderLivePreview() {
+    const container = $("#preview-matrix-container").empty();
     const maxCols = parseInt($("#maxCols").val()) || 0;
     const gradeElements = $(".grade");
-    
-    // 글로벌 포맷 조건 가져오기
     const rowNameType = $("#rowNameType").val();
     const rowStartChar = $("#rowStartChar").val() || (rowNameType === "NUM" ? "1" : "A");
 
-    if (maxCols <= 0 || gradeElements.length === 0) {
-        container.html("<span class='text-slate-600 text-sm'>좌석 설정 데이터를 구성 중입니다...</span>");
-        return;
-    }
+    if (maxCols <= 0 || gradeElements.length === 0) { container.html("<span class='text-slate-600 text-xs'>설정 대기 중...</span>"); return; }
+    const colorChips = ['bg-cyan-500/20 text-cyan-400 border-cyan-500/40', 'bg-purple-500/20 text-purple-400 border-purple-500/40', 'bg-amber-500/20 text-amber-400 border-amber-500/40'];
 
-    const colorChips = [
-        'bg-cyan-500/20 text-cyan-400 border-cyan-500/40', 
-        'bg-purple-500/20 text-purple-400 border-purple-500/40', 
-        'bg-amber-500/20 text-amber-400 border-amber-500/40', 
-        'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-    ];
-
-    // 상단 열 제어 버튼 배치
-    const colControlRow = $('<div class="flex gap-1 justify-center w-full mb-3 ml-12"></div>');
+    const colControlRow = $('<div class="flex gap-1 justify-center w-full mb-2 ml-8"></div>');
     for (let c = 1; c <= maxCols; c++) {
-        const colBtn = $(`<div class="w-8 h-5 flex items-center justify-center text-[9px] text-slate-400 bg-slate-800 rounded cursor-pointer hover:bg-slate-600 select-none border border-slate-700">C\${c}</div>`);
+        const colBtn = $(`<div class="w-7 h-5 flex items-center justify-center text-[9px] text-slate-500 bg-slate-800 rounded cursor-pointer hover:bg-slate-700 select-none border border-slate-700">C\${c}</div>`);
         colBtn.on('click', function() { toggleColumn(c); });
         colControlRow.append(colBtn);
     }
     container.append(colControlRow);
 
-    // 구역 전체를 관통하는 통합 유효 행 카운터 (통로를 만났을 때 유연한 당김용)
     let globalActiveRowIndex = 0;
-
     gradeElements.each(function(gradeIdx) {
         const gradeName = $(this).find("input[name='gradeNames']").val() || "구역";
         const rows = parseInt($(this).find("input[name='gradeRowCounts']").val()) || 0;
         const colorClass = colorChips[gradeIdx % colorChips.length];
-
         if(rows <= 0) return;
 
-        const sectionHeader = $(`<div class="text-xs text-slate-500 font-bold self-start mt-4 mb-1 ml-12">\${gradeName} AREA</div>`);
-        container.append(sectionHeader);
+        container.append(`<div class="text-[10px] text-slate-500 font-mono font-bold self-start mt-2 mb-1 ml-10">\${gradeName} ZONE</div>`);
 
         for (let r = 1; r <= rows; r++) {
-            // 현재 행이 전부 비활성화 상태인지 체크
             let isRowCompletelyBlocked = true;
-            for(let c = 1; c <= maxCols; c++) {
-                if(!blockedSeats.has(gradeIdx + "_" + r + "_" + c)) {
-                    isRowCompletelyBlocked = false;
-                    break;
-                }
-            }
+            for(let c = 1; c <= maxCols; c++) { if(!blockedSeats.has(gradeIdx + "_" + r + "_" + c)) { isRowCompletelyBlocked = false; break; } }
 
             const rowWrapper = $('<div class="flex gap-1 justify-center w-full items-center mb-1"></div>');
-            
-            // 왼쪽 행 컨트롤 버튼 제어 지점
-            const rowBtn = $(`<div class="w-10 h-7 flex items-center justify-center text-[9px] text-slate-400 bg-slate-800 rounded cursor-pointer hover:bg-slate-600 select-none mr-2 border border-slate-700">R\${r}</div>`);
+            const rowBtn = $(`<div class="w-8 h-6 flex items-center justify-center text-[9px] text-slate-500 bg-slate-800 rounded cursor-pointer hover:bg-slate-700 select-none mr-2 border border-slate-700">R\${r}</div>`);
             rowBtn.on('click', function() { toggleRow(gradeIdx, r, maxCols); });
             rowWrapper.append(rowBtn);
 
-            // 포맷 설정에 따른 실시간 가변 행 네임 추출
-            // 통로가 되어 당겨지더라도 설정한 포맷 규칙(`getRowLabel`)을 철저히 계산합니다.
             const calculatedRowName = getRowLabel(rowNameType, rowStartChar, globalActiveRowIndex);
-
             let displayCol = 1; 
 
             for (let c = 1; c <= maxCols; c++) {
                 const seatId = gradeIdx + "_" + r + "_" + c;
                 const isBlocked = blockedSeats.has(seatId);
-                
-                let seatText = '';
-                let seatClass = '';
+                let seatClass = isBlocked ? 'seat-blocked' : `${colorClass} seat-block`;
+                let seatText = isBlocked ? '' : calculatedRowName + displayCol++;
 
-                if (isBlocked) {
-                    seatClass = 'seat-blocked';
-                } else {
-                    seatClass = colorClass;
-                    seatText = calculatedRowName + '-' + displayCol; // 변환된 행 이름 결합
-                    displayCol++; 
-                }
-
-                const seatBtn = $(`
-                    <div data-id="\${seatId}" class="seat-block w-8 h-7 flex items-center justify-center text-[9px] font-bold rounded border cursor-pointer select-none \${seatClass}">
-                        \${seatText}
-                    </div>
-                `);
-
+                const seatBtn = $(`<div class="w-7 h-6 flex items-center justify-center text-[9px] font-bold rounded border cursor-pointer select-none \${seatClass}">\${seatText}</div>`);
                 seatBtn.on('click', function() {
-                    const id = $(this).data('id');
-                    if (blockedSeats.has(id)) blockedSeats.delete(id);
-                    else blockedSeats.add(id);
+                    if (blockedSeats.has(seatId)) blockedSeats.delete(seatId); else blockedSeats.add(seatId);
                     renderLivePreview(); 
                 });
-
                 rowWrapper.append(seatBtn);
             }
             container.append(rowWrapper);
-
-            // 해당 줄이 살아있는 좌석 줄이었을 때만 가변 문자 인덱스 증가
-            if (!isRowCompletelyBlocked) {
-                globalActiveRowIndex++;
-            }
+            if (!isRowCompletelyBlocked) globalActiveRowIndex++;
         }
     });
 }
+// ... (여기에 기존 renderLivePreview, getRowLabel, addScheduleTimeline, prepareSubmit 등 모든 JS 로직 통합) ...
+// (참고: 위에서 사용한 registerArtistInline, refreshAllCastingSelects, toggleRow 등 모든 함수를 여기에 배치하시면 됩니다.)
 
-// 초기 호출부 및 행/열 토글 함수들은 기존 소스 사용 유지...
 $(document).ready(function() {
+    addScheduleTimeline();
     renderLivePreview();
+    calculatePriceRange(); 
 });
 </script>
-
 </body>
 </html>
