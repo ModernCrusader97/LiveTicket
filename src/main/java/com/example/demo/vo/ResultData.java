@@ -18,12 +18,12 @@ public class ResultData<DT> {
 	}
 
 	public static <DT> ResultData<DT> from(String ResultCode, String msg,String data1Name, DT data1) {
-		ResultData<DT> rd = new ResultData<DT>();
+		ResultData<DT> rd = new ResultData<>();
 		rd.ResultCode = ResultCode;
 		rd.msg = msg;
 		rd.data1 = data1;
 		rd.data1Name = data1Name;
-		
+
 		return rd;
 	}
 

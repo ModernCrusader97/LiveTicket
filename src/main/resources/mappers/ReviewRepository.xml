@@ -27,15 +27,40 @@
 		WHERE id = #{concertId}
 	</update>
 
+	<update id="updateConcertRatingStats">
+		UPDATE concert
+		SET totalRating = IFNULL((
+		SELECT SUM(rating)
+		FROM review
+		WHERE (concertId = #{concertId} OR concertId IN (SELECT id FROM concert WHERE parentId = #{concertId}))
+		AND type = 'REVIEW'
+		), 0),
+		reviewCount = (
+		SELECT COUNT(*)
+		FROM review
+		WHERE (concertId = #{concertId} OR concertId IN (SELECT id FROM concert WHERE parentId = #{concertId}))
+		AND type = 'REVIEW'
+		)
+		WHERE id = #{concertId}
+	</update>
+
 	<select id="getReviewsByType"
 		resultType="com.example.demo.vo.Review">
-		SELECT R.*, M.nickname AS extra__writer
+		SELECT R.*,
+		M.nickname AS extra__writer,
+		C.title AS
+		extra__concertTitle
 		FROM review AS R
-		INNER JOIN `member` AS M ON R.memberId = M.id
-		WHERE R.concertId =
-		#{concertId}
-		AND R.`type` = #{type}
-		ORDER BY R.id DESC
+		INNER JOIN `member` AS M ON
+		R.memberId = M.id
+		INNER JOIN concert AS C ON R.concertId = C.id
+		WHERE
+		(
+		R.concertId = #{concertId}
+		OR R.concertId IN (SELECT id FROM concert WHERE parentId = #{concertId})
+		)
+		AND
+		R.`type` = #{type} ORDER BY R.id DESC
 	</select>
 
 	<delete id="deleteReview" parameterType="int">
@@ -53,6 +78,7 @@
 		<set>
 			<if test="title !=null and title != ''">title = #{title},</if>
 			<if test="body !=null and body != ''">body = #{body},</if>
+			<if test="rating != null">rating = #{rating},</if>
 			updateDate = NOW()
 		</set>
 		WHERE id = #{id}
@@ -62,11 +88,14 @@
 		resultType="com.example.demo.vo.Review">
 		SELECT R.*,
 		M.nickname AS extra__writer,
-		C.title AS extra__concertTitle
+		C.title AS
+		extra__concertTitle
 		FROM review AS R
-		INNER JOIN `member` AS M ON R.memberId = M.id
+		INNER JOIN `member` AS M ON
+		R.memberId = M.id
 		INNER JOIN concert AS C ON R.concertId = C.id
-		WHERE R.id = #{id}
+		WHERE
+		R.id = #{id}
 	</select>
 
 	<select id="getReviewById" parameterType="int"
@@ -86,4 +115,23 @@
 		ORDER BY A.id DESC
 	</select>
 
+	<select id="getForPrintReviewsByType"
+		resultType="com.example.demo.vo.Review">
+		SELECT R.*,
+		M.nickname AS extra__writer,
+		C.title AS
+		extra__concertTitle
+		FROM review AS R
+		INNER JOIN `member` AS M ON
+		R.memberId = M.id
+		INNER JOIN concert AS C ON R.concertId = C.id
+		WHERE
+		(
+		R.`type` = #{type}
+		AND (
+		R.concertId = #{concertId}
+		OR R.concertId IN (SELECT id FROM concert WHERE parentId = #{concertId})
+		)
+		) ORDER BY R.id DESC
+	</select>
 </mapper>

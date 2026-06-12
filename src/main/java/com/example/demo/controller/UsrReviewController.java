@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,13 +14,13 @@ import com.example.demo.service.ConcertService;
 import com.example.demo.service.ReservationService;
 import com.example.demo.service.ReviewService;
 import com.example.demo.util.Ut;
-import com.example.demo.vo.Review;
 import com.example.demo.vo.Concert;
+import com.example.demo.vo.Reservation;
 import com.example.demo.vo.ResultData;
+import com.example.demo.vo.Review;
 import com.example.demo.vo.Rq;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class UsrReviewController {
@@ -63,7 +64,7 @@ public class UsrReviewController {
 
 	@RequestMapping("/usr/review/doModify")
 	@ResponseBody
-	public String doModify(HttpServletRequest req, int id, String title, String body) {
+	public String doModify(HttpServletRequest req, int id, String title, String body, int rating) {
 
 		Rq rq = (Rq) req.getAttribute("rq");
 
@@ -80,7 +81,7 @@ public class UsrReviewController {
 		}
 
 		if (userCanModifyRd.isSuccess()) {
-			reviewService.modifyReview(id, title, body);
+			reviewService.modifyReview(id, title, body, rating);
 		}
 		review = reviewService.getReviewById(id);
 
@@ -111,23 +112,45 @@ public class UsrReviewController {
 	}
 
 	@RequestMapping("/usr/review/list")
-	public String showList(Model model) {
-		List<Review> reviews = reviewService.getReviews();
+	public String showList(Model model, @RequestParam(defaultValue = "EXPECT") String type) {
+
+		List<Review> reviews = reviewService.getForPrintReviewsByType(type);
+
+		List<Concert> concerts = concertService.getConcerts().getData1();
 
 		model.addAttribute("reviews", reviews);
+		model.addAttribute("concerts", concerts);
+		model.addAttribute("type", type); // 현재 어떤 탭인지 알려주기 위해 추가
+
 		return "/usr/review/list";
 	}
 
 	@RequestMapping("/usr/review/write")
-	public String showWrite(Model model, @RequestParam(defaultValue = "EXPECT") String type) {
-
+	public String showWrite(Model model, @RequestParam(defaultValue = "EXPECT") String type, Integer concertId) {
+		if (!rq.isLogined()) {
+			rq.printHistoryBackNT("로그인 후 이용해주세요.");
+			return null;
+		}
 		var allConcertsRd = concertService.getConcerts();
 		model.addAttribute("allConcerts", allConcertsRd.getData1());
 
+		if (concertId != null) {
+
+			Concert selectedConcert = concertService.getConcertById(concertId).getData1();
+			model.addAttribute("selectedConcert", selectedConcert);
+		}
+
 		if (rq.isLogined()) {
 
-			model.addAttribute("myReservations", reservationService.getMyReservations(rq.getLoginedMemberId()));
-		}
+	        List<Reservation> allMyReservations = reservationService.getMyReservations(rq.getLoginedMemberId());
+
+
+	        List<Reservation> confirmedReservations = allMyReservations.stream()
+	                .filter(r -> "CONFIRMED".equals(r.getStatus()))
+	                .collect(Collectors.toList());
+
+	        model.addAttribute("myReservations", confirmedReservations);
+	    }
 
 		return "usr/review/write";
 	}
@@ -136,11 +159,16 @@ public class UsrReviewController {
 	@ResponseBody
 	public String doWrite(int concertId, String title, String body, @RequestParam(defaultValue = "0") int rating,
 			String type, Integer orderId) {
-
-		if (Ut.isEmpty(title))
+		if (!rq.isLogined()) {
+			rq.printHistoryBackNT("로그인 후 이용해주세요.");
+			return null;
+		}
+		if (Ut.isEmpty(title)) {
 			return Ut.jsHistoryBack("F-1", "제목을 입력해주세요.");
-		if (Ut.isEmpty(body))
+		}
+		if (Ut.isEmpty(body)) {
 			return Ut.jsHistoryBack("F-2", "내용을 입력해주세요.");
+		}
 
 		ResultData writeRd = reviewService.writeReview(rq.getLoginedMemberId(), concertId, title, body, rating, type,
 				orderId);

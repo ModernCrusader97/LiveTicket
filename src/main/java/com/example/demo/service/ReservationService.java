@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.vo.Concert;
 import com.example.demo.vo.Reservation;
@@ -22,7 +23,7 @@ import com.example.demo.vo.Seat;
 public class ReservationService {
     @Autowired
     private ReservationRepository reservationRepository;
-    
+
     @Scheduled(fixedRate = 60000) // 1분(60,000ms)마다 실행
     public void scheduledReleaseExpiredSeats() {
         releaseExpiredSeats();
@@ -40,11 +41,11 @@ public class ReservationService {
     public List<Seat> getSeatsByConcertId(int concertId) {
         return reservationRepository.getSeatsByConcertId(concertId);
     }
-    
+
     @Transactional
     public ResultData holdSeats(int memberId, int concertId, String seatData) {
         String[] seatInfos = seatData.split(",");
-        
+
         int alreadyReservedCount = reservationRepository.getReservedCountByMemberId(memberId, concertId);
         if (alreadyReservedCount + seatInfos.length > 4) {
             return ResultData.from("F-2", "최대 4매까지만 가능합니다.");
@@ -68,10 +69,10 @@ public class ReservationService {
         return ResultData.from("S-1", "선택하신 " + affectedRows + "개 좌석이 모두 선점되었습니다.");
     }
 
-    public List<Map<String, Object>> getMyReservations(int memberId) {
+    public List<Reservation> getMyReservations(int memberId) {
         return reservationRepository.getMyReservations(memberId);
     }
-    
+
     @Transactional
     public ResultData confirmReservation(int memberId, int concertId, String seatIds) {
         List<Integer> seatIdList = Arrays.stream(seatIds.split(","))
@@ -89,13 +90,13 @@ public class ReservationService {
                 throw new RuntimeException(seatId + "번 좌석 예매 중 오류가 발생했습니다. (점유 만료 등)");
             }
 
-            int paidPrice = seat.getExtra__price(); 
+            int paidPrice = seat.getExtra__price();
             reservationRepository.saveReservation(memberId, concertId, seatId, paidPrice);
         }
 
         return ResultData.from("S-1", "예매 및 결제가 완료되었습니다.");
     }
-    
+
     public int getReservedCount(int memberId, int concertId) {
         return reservationRepository.getReservedCountByMemberId(memberId, concertId);
     }
@@ -107,26 +108,26 @@ public class ReservationService {
 	public List<Seat> getSeatsByIds(List<Integer> seatIdList) {
 		return reservationRepository.getSeatsByIds(seatIdList);
 	}
-	
+
 	@Transactional
 	public ResultData doCancel(int memberId, int reservationId) {
 
 	    Reservation reservation = reservationRepository.getReservationById(reservationId);
-	    
+
 	    if (reservation == null) {
 	        return ResultData.from("F-1", "존재하지 않는 예약입니다.");
 	    }
-	    
+
 	    if (reservation.getMemberId() != memberId) {
 	        return ResultData.from("F-2", "취소 권한이 없습니다.");
 	    }
-	    
+
 	    if ("CANCELLED".equals(reservation.getStatus())) {
 	        return ResultData.from("F-3", "이미 취소된 예약입니다.");
 	    }
 
 	    int seatUpdateRd = reservationRepository.releaseSeatAfterCancel(reservation.getSeatId());
-	    
+
 	    if (seatUpdateRd == 0) {
 	        throw new RuntimeException("좌석 상태를 변경할 수 없어 취소가 실패했습니다.");
 	    }

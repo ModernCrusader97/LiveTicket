@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.ConcertRepository;
+import com.example.demo.vo.Artist;
 import com.example.demo.vo.Concert;
 import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Seat;
 
 @Service
 public class ConcertService {
+
 	@Autowired
 	private ConcertRepository concertRepository;
 
@@ -35,8 +37,21 @@ public class ConcertService {
 
 		return ResultData.from("S-1", id + "번 공연 조회 성공", "concert", concert);
 	}
-	
+
+	public List<Concert> getSchedulesByMasterId(long masterId) {
+		return concertRepository.getSchedulesByMasterId(masterId);
+	}
+
+	public List<Artist> getArtistsByConcertId(long concertId) {
+		return concertRepository.getArtistsByConcertId(concertId);
+	}
+
 	public List<Seat> getRemainingSeats(long concertId) {
         return concertRepository.getRemainingSeats(concertId);
     }
+
+	public List<Artist> getAllArtistsByMasterId(long masterId) {
+		return concertRepository.getAllArtistsByMasterId(masterId);
+
+	}
 }

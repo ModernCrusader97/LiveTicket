@@ -20,10 +20,10 @@ public class Review {
     private int rating;
     private String type; // EXPECT, REVIEW
     private Integer orderId;
-    
-    private String extra__concertTitle; 
+
+    private String extra__concertTitle;
     private String extra__writer;
-    
+
     private boolean extra__canDelete;
     private boolean extra__canModify;
 }

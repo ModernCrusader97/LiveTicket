@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class UsrMemberController {
 	@Autowired
 	private Rq rq;
-	
+
 	@Autowired
 	private MemberService memberService;
 
@@ -54,10 +54,10 @@ public class UsrMemberController {
 		if (member == null) {
 			return Ut.jsHistoryBack("F-3", Ut.f("%s는 없는 아이디 입니다.", loginId));
 		}
-		if (member.getLoginPw().equals(loginPw) == false) {
+		if (!member.getLoginPw().equals(loginPw)) {
 			return Ut.jsHistoryBack("F-4", "비밀번호 틀림");
 		}
-		
+
 		rq.login(member);
 		return Ut.jsReplace("S-1", Ut.f("%s님 환영합니다!", member.getNickname()), "/");
 	}
@@ -66,7 +66,7 @@ public class UsrMemberController {
 	public String showJoin() {
 		return "/usr/member/join";
 	}
-	
+
 	@RequestMapping("/usr/member/doJoin")
 	@ResponseBody
 	public String doJoin(HttpServletRequest req, String loginId, String loginPw, String name,

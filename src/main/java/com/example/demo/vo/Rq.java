@@ -41,39 +41,39 @@ public class Rq {
 		}
 		this.req.setAttribute("rq", this);
 	}
-	
+
 	public void disableCache() {
 	    resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 	    resp.setHeader("Pragma", "no-cache");
 	    resp.setDateHeader("Expires", 0);
 	}
-	
+
 	public void printHistoryBackNT(String msg) {
 	    resp.setContentType("text/html; charset=UTF-8");
 	    try {
 	        println("<script>");
 	        if (!Ut.isEmpty(msg)) {
-	            String filteredMsg = msg.replace("'", "\\'"); 
+	            String filteredMsg = msg.replace("'", "\\'");
 	            println("alert('" + filteredMsg + "');");
 	        }
 	        println("history.back();");
-	        println("</script>"); 
+	        println("</script>");
 	        resp.getWriter().flush();
 	    } catch (IOException e) {
 	        e.printStackTrace();
 	    }
 	}
-	
+
 	public void printHistoryBack(String msg) throws IOException {
 		resp.setContentType("text/html; charset=UTF-8");
 		println("<script>");
 		println("console.log(123);");
-		
+
 		if (!Ut.isEmpty(msg)) {
 			println("alert('" + msg.replace("'", "\\") + "');");
 		}
 		println("console.log(456);");
-		
+
 		println("history.back();");
 
 		println("</script>");

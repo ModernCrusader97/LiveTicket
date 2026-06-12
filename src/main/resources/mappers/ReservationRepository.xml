@@ -27,7 +27,7 @@
 		S.concertId = #{concertId}
 	</select>
 
-	<select id="getMyReservations" resultType="map">
+	<select id="getMyReservations" resultType="com.example.demo.vo.Reservation">
 		SELECT
 		r.*,
 		c.title AS

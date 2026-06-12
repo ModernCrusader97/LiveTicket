@@ -10,17 +10,17 @@ import lombok.NoArgsConstructor;
 
 public class Seat {
     private long id;
-    private String regDate;   
+    private String regDate;
     private String updateDate;
     private long concertId;
     private long gradeId;
     private String rowName;
     private int colNumber;
-    private String status; 
+    private String status;
     private int version;
-    private String heldAt; 
+    private String heldAt;
     private Integer memberId;
-    
-    private String extra__gradeName; 
+
+    private String extra__gradeName;
     private int extra__price;
 }

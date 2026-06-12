@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.example.demo.service.ReservationService;
 import com.example.demo.util.Ut;
 import com.example.demo.vo.Concert;
+import com.example.demo.vo.Reservation;
 import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Rq;
 import com.example.demo.vo.Seat;
@@ -38,7 +38,7 @@ public class UsrReservationController {
 			return null;
 		}
 
-		List<Map<String, Object>> myReservations = reservationService.getMyReservations(rq.getLoginedMemberId());
+		List<Reservation> myReservations = reservationService.getMyReservations(rq.getLoginedMemberId());
 		model.addAttribute("myReservations", myReservations);
 
 		return "usr/reservation/mylist";
@@ -47,7 +47,7 @@ public class UsrReservationController {
 	@RequestMapping("/usr/reservation/seatMap")
 	public String showSeatMap(Model model, Integer concertId) {
 		rq.disableCache();
-		
+
 		if (!rq.isLogined()) {
 			rq.printHistoryBackNT("로그인 후 이용해주세요.");
 			return null;
@@ -135,7 +135,7 @@ public class UsrReservationController {
 
 		return "redirect:../reservation/payment?concertId=" + concertId + "&seatIds=" + cleanIds;
 	}
-	
+
 	@PostMapping("/usr/reservation/doConfirm")
 	@ResponseBody
 	public String doConfirm(int concertId, String seatIds) {
@@ -151,7 +151,7 @@ public class UsrReservationController {
 
 	    return Ut.jsReplace(confirmRd.getResultCode(),confirmRd.getMsg(),  "../reservation/mylist");
 	}
-	
+
 	@RequestMapping("/usr/reservation/doCancel")
 	@ResponseBody
 	public String doCancel(int id) {

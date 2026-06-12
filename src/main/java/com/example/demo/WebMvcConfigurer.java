@@ -19,7 +19,7 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
 
 	@Autowired
 	NeedLogoutInterceptor needLogoutInterceptor;
-	
+
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(beforActionInterceptor).addPathPatterns("/**");

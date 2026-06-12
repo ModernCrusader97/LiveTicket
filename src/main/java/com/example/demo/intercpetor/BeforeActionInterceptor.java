@@ -13,12 +13,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class BeforeActionInterceptor implements HandlerInterceptor {
 	@Autowired
 	private Rq rq;
-	
+
 	@Override
 	public boolean preHandle(HttpServletRequest req, HttpServletResponse resp, Object Handler) throws Exception {
 		//System.out.println("실행됨");
 		rq.initBeforeActionInterceptor(); // rq생성을 강제로 수행함
-		
+
 		return HandlerInterceptor.super.preHandle(req, resp, Handler);
 
 	}

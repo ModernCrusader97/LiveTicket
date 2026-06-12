@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import java.util.List;
 import java.util.Map;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -19,7 +20,7 @@ public interface ReservationRepository {
 	int updateSeatsToPendingBulk(@Param("memberId") int memberId, @Param("concertId") int concertId,
 			@Param("seatList") List<Map<String, Object>> seatList);
 
-	List<Map<String, Object>> getMyReservations(@Param("memberId") int memberId);
+	List<Reservation> getMyReservations(@Param("memberId") int memberId);
 
 	int updateSeatToReserved(@Param("seatId") long seatId, @Param("memberId") int memberId);
 
@@ -34,7 +35,7 @@ public interface ReservationRepository {
 	void saveReservation(int memberId, int concertId, int seatId, int paidPrice);
 
 	Seat getSeatWithPrice(int seatId);
-	
+
 	Reservation getReservationById(@Param("id") int id);
 
 	int releaseSeatAfterCancel(@Param("seatId") long seatId);

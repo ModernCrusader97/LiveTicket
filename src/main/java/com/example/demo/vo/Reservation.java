@@ -11,15 +11,21 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class Reservation {
-	
+
 	private long id;
-    private String regDate;   
-    private String updateDate; 
+	private long concertId;
+	private long seatIds;
+    private String regDate;
+    private String updateDate;
     private long memberId;
     private long seatId;
     private int paidPrice;
     private String status;
 
+    private String extra__gradeName;
+    private String extra__rowName;
+    private String extra__colNumber;
+    private String extra__concertDate;
     private String extra__concertTitle;
     private String extra__seatInfo;
 }

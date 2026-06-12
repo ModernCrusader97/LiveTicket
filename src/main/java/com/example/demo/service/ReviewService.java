@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.repository.ReviewRepository;
 import com.example.demo.util.Ut;
-import com.example.demo.vo.Review;
 import com.example.demo.vo.ResultData;
+import com.example.demo.vo.Review;
 
 @Service
 public class ReviewService {
@@ -28,7 +28,6 @@ public class ReviewService {
 	    reviewRepository.writeReview(memberId, concertId, title, body, rating, type, orderId);
 	    int id = reviewRepository.getLastInsertId();
 
-	    // 2. 만약 후기(REVIEW)라면 공연 테이블의 평점 데이터 갱신
 	    if ("REVIEW".equals(type)) {
 	        reviewRepository.updateConcertRating(concertId, rating);
 	    }
@@ -49,9 +48,15 @@ public class ReviewService {
 		}
 		return ResultData.from("S-1", Ut.f("%d번 게시글을 삭제 가능", review.getId()));
 	}
-
+	@Transactional
 	public void deleteReview(int id) {
-		reviewRepository.deleteReview(id);
+		Review review = reviewRepository.getReviewById(id);
+	    
+	    reviewRepository.deleteReview(id);
+	    
+	    if (review != null && "REVIEW".equals(review.getType())) {
+	    	 reviewRepository.updateConcertRatingStats(review.getConcertId());
+	    }
 	}
 
 	public Review getForPrintReview(int loginedMemberId, int id) {
@@ -61,11 +66,11 @@ public class ReviewService {
 
 		return review;
 	}
-	
+
 	public List<Review> getReviewsByType(int concertId, String type) {
 	    return reviewRepository.getReviewsByType(concertId, type);
 	}
-	
+
 	private void controlForPrintData(int loginedMemberId, Review review) {
 		if (review == null) {
 			return;
@@ -77,9 +82,15 @@ public class ReviewService {
 		ResultData userCanDeleteRd = userCanDelete(loginedMemberId, review);
 		review.setExtra__canDelete(userCanDeleteRd.isSuccess());
 	}
-
-	public void modifyReview(int id, String title, String body) {
-		reviewRepository.modifyReview(id, title, body);
+	
+	@Transactional
+	public void modifyReview(int id, String title, String body, int rating) {
+		Review review = reviewRepository.getReviewById(id);
+		reviewRepository.modifyReview(id, title, body, rating);
+		
+		if ("REVIEW".equals(review.getType())) {
+			reviewRepository.updateConcertRatingStats(review.getConcertId());
+	    }
 
 	}
 
@@ -89,6 +100,13 @@ public class ReviewService {
 
 	public List<Review> getReviews() {
 		return reviewRepository.getReviews();
+	}
+
+	public List<Review> getForPrintReviewsByType(String type) {
+
+		List<Review> reviews = reviewRepository.getForPrintReviewsByType(type);
+
+		return reviews;
 	}
 
 }
