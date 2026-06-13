@@ -9,15 +9,16 @@
   <div class="absolute inset-0 opacity-10"
        style="background-image:radial-gradient(circle at 30% 50%, oklch(var(--p)) 0%, transparent 60%), radial-gradient(circle at 80% 20%, oklch(var(--s)) 0%, transparent 50%);"></div>
   <div class="relative max-w-screen-xl mx-auto px-4 py-20 sm:py-28 flex flex-col items-center text-center gap-6">
-    <div class="badge badge-primary badge-outline font-bold tracking-widest text-xs px-4 py-2 font-mono">C.A.S.T.</div>
-    <h1 class="text-4xl sm:text-6xl font-black leading-tight tracking-tight">
-      <span class="text-primary">C</span>oncurrent.<br class="sm:hidden"/>
-      <span class="text-secondary">A</span>nd.<br class="sm:hidden"/>
-      <span class="text-accent">S</span>ecure.<br class="sm:hidden"/>
-      <span class="text-warning">T</span>icketing.
-    </h1>
-    <p class="text-base-content/50 text-base sm:text-lg max-w-lg">
-      동시 접속도 안전하게. 공정하고 빠른 티켓팅 경험을 제공합니다.
+    <p class="font-mono font-black text-5xl sm:text-7xl tracking-widest text-base-content">C.A.S.T.</p>
+    <div class="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm sm:text-base font-mono text-base-content/40">
+      <span><span class="text-primary font-black">C</span>oncurrent — <span class="text-base-content/60">동시에 몰려도</span></span>
+      <span><span class="text-secondary font-black">A</span>nd — <span class="text-base-content/60">언제나</span></span>
+      <span><span class="text-accent font-black">S</span>ecure — <span class="text-base-content/60">안전하게</span></span>
+      <span><span class="text-warning font-black">T</span>icketing — <span class="text-base-content/60">내 자리를</span></span>
+    </div>
+    <p class="text-base-content/50 text-base sm:text-lg max-w-lg text-center">
+      수만 명이 동시에 접속해도, 내 자리는 공정하게 확보됩니다.<br class="hidden sm:block"/>
+      빠르고 안전한 티켓팅, C.A.S.T.가 함께합니다.
     </p>
     <div class="flex gap-3 mt-2">
       <a href="/usr/concert/list" class="btn btn-primary btn-lg rounded-xl px-8 font-black">공연 목록 보기</a>
