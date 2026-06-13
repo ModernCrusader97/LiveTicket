@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.example.demo.vo.Artist;
 import com.example.demo.vo.Concert;
@@ -11,7 +12,11 @@ import com.example.demo.vo.Concert;
 @Mapper
 public interface ConcertRepository {
 
-    List<Concert> getConcerts();
+    List<Concert> getConcerts(
+            @Param("sort") String sort,
+            @Param("status") String status,
+            @Param("keyword") String keyword,
+            @Param("limit") Integer limit);
 
     Concert getConcertById(long id);
 

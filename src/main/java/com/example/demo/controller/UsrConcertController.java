@@ -37,13 +37,15 @@ public class UsrConcertController {
     private ConcertService concertService;
 
     @RequestMapping("/usr/concert/list")
-    public String showList(Model model) {
-        ResultData<List<Concert>> concertsRd = concertService.getConcerts();
-        if (concertsRd.isFail()) {
-            rq.printHistoryBackNT(concertsRd.getMsg());
-            return null;
-        }
-        model.addAttribute("concerts", concertsRd.getData1());
+    public String showList(Model model,
+                           String sort,
+                           String status,
+                           String keyword) {
+        List<Concert> concerts = concertService.getConcertsFiltered(sort, status, keyword);
+        model.addAttribute("concerts", concerts);
+        model.addAttribute("sort", sort);
+        model.addAttribute("status", status);
+        model.addAttribute("keyword", keyword);
         return "usr/concert/list";
     }
 

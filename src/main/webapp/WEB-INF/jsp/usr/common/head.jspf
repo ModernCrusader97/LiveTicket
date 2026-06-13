@@ -30,7 +30,14 @@
     <nav class="hidden sm:flex items-center gap-6 text-sm font-semibold text-base-content/70 flex-1">
       <a href="/usr/concert/list" class="nav-link hover:text-primary">공연 목록</a>
       <a href="/usr/review/list" class="nav-link hover:text-primary">커뮤니티</a>
-      <a href="/usr/reservation/mylist" class="nav-link hover:text-primary">내 예매</a>
+      <c:choose>
+        <c:when test="${rq.isAdmin()}">
+          <a href="/admin/home/main" class="nav-link hover:text-amber-400 text-amber-500/80 font-black">관리자 패널</a>
+        </c:when>
+        <c:otherwise>
+          <a href="/usr/reservation/mylist" class="nav-link hover:text-primary">내 예매</a>
+        </c:otherwise>
+      </c:choose>
     </nav>
 
     <div class="flex-1 sm:flex-none"></div>

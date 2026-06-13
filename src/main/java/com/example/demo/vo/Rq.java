@@ -25,6 +25,9 @@ public class Rq {
 	@Getter
 	private int loginedMemberId = 0;
 
+	@Getter
+	private int loginedMemberAuthLevel = 0;
+
 	private HttpServletRequest req;
 	private HttpServletResponse resp;
 
@@ -38,6 +41,10 @@ public class Rq {
 		if (session.getAttribute("loginedMemberId") != null) {
 			isLogined = true;
 			loginedMemberId = (int) session.getAttribute("loginedMemberId");
+			Object authLevelAttr = session.getAttribute("loginedMemberAuthLevel");
+			if (authLevelAttr != null) {
+				loginedMemberAuthLevel = (int) authLevelAttr;
+			}
 		}
 		this.req.setAttribute("rq", this);
 	}
@@ -87,10 +94,16 @@ public class Rq {
 
 	public void logout() {
 		session.removeAttribute("loginedMemberId");
+		session.removeAttribute("loginedMemberAuthLevel");
 	}
 
 	public void login(Member member) {
 		session.setAttribute("loginedMemberId", member.getId());
+		session.setAttribute("loginedMemberAuthLevel", member.getAuthLevel());
+	}
+
+	public boolean isAdmin() {
+		return loginedMemberAuthLevel >= 7;
 	}
 
 	public void initBeforeActionInterceptor() {

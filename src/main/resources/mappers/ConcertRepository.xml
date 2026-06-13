@@ -6,9 +6,33 @@
 <mapper namespace="com.example.demo.repository.ConcertRepository">
 
     <select id="getConcerts" resultType="com.example.demo.vo.Concert">
-        SELECT *, IF(reviewCount > 0, ROUND(totalRating / reviewCount, 1), 0) AS extra__avgRating
-        FROM concert
-        ORDER BY startDate ASC
+        SELECT c.*,
+               IF(c.reviewCount > 0, ROUND(c.totalRating / c.reviewCount, 1), 0) AS extra__avgRating,
+               IFNULL(booked.cnt, 0) * 100.0 / NULLIF(IFNULL(seats.total, 0), 0) AS extra__bookingRate
+        FROM concert c
+        LEFT JOIN (
+            SELECT s.concertId, COUNT(r.id) AS cnt
+            FROM `schedule` s
+            LEFT JOIN reservation r ON r.scheduleId = s.id AND r.status = 'CONFIRMED'
+            GROUP BY s.concertId
+        ) booked ON booked.concertId = c.id
+        LEFT JOIN (
+            SELECT concertId, SUM(totalSeats) AS total
+            FROM `schedule`
+            GROUP BY concertId
+        ) seats ON seats.concertId = c.id
+        <where>
+            <if test="status != null and status != ''">AND c.status = #{status}</if>
+            <if test="keyword != null and keyword != ''">AND c.title LIKE CONCAT('%', #{keyword}, '%')</if>
+        </where>
+        ORDER BY
+        <choose>
+            <when test="sort == 'viewCount'">c.viewCount DESC</when>
+            <when test="sort == 'rating'">extra__avgRating DESC</when>
+            <when test="sort == 'bookingRate'">extra__bookingRate DESC</when>
+            <otherwise>c.startDate ASC</otherwise>
+        </choose>
+        <if test="limit != null">LIMIT #{limit}</if>
     </select>
 
     <select id="getConcertById" resultType="com.example.demo.vo.Concert">

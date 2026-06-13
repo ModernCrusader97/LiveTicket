@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.example.demo.service.ConcertService;
 import com.example.demo.service.ReviewService;
 import com.example.demo.vo.Concert;
-import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Review;
 
 @Controller
@@ -24,10 +23,9 @@ public class UsrHomeController {
 
     @RequestMapping("/usr/home/main")
     public String showMain(Model model) {
-        ResultData<List<Concert>> concertsRd = concertService.getConcerts();
-        if (concertsRd.isSuccess()) {
-            model.addAttribute("concerts", concertsRd.getData1());
-        }
+        model.addAttribute("topByViews", concertService.getTopConcertsByViewCount(6));
+        model.addAttribute("topByBooking", concertService.getTopConcertsByBookingRate(6));
+        model.addAttribute("allConcerts", concertService.getConcertsFiltered(null, null, null));
         List<Review> bestReviews = reviewService.getForPrintReviewsByType("REVIEW");
         model.addAttribute("bestReviews", bestReviews);
         return "/usr/home/main";

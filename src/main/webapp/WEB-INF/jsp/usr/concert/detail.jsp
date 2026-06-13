@@ -47,6 +47,12 @@
 								</c:choose>
 							</div>
 							<h1 class="text-2xl md:text-3xl font-black mb-4 leading-tight">${concert.title}</h1>
+							<div class="flex items-center gap-3 mb-3 text-xs text-base-content/40">
+								<span><i class="fas fa-eye mr-1"></i>${concert.viewCount} 조회</span>
+								<c:if test="${concert.extra__avgRating > 0}">
+									<span class="text-amber-400 font-bold">★ ${concert.extra__avgRating} (${concert.reviewCount}개)</span>
+								</c:if>
+							</div>
 
 							<div class="space-y-2.5 text-sm md:text-base text-base-content/80 max-w-xl mx-auto sm:mx-0">
 								<div class="flex items-start gap-4">

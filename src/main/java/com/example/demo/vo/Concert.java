@@ -24,5 +24,6 @@ public class Concert {
     private String updateDate;
 
     private double extra__avgRating;
+    private double extra__bookingRate;
     private int viewCount;
 }

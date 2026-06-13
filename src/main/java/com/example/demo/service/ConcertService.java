@@ -24,11 +24,27 @@ public class ConcertService {
     private ScheduleRepository scheduleRepository;
 
     public ResultData<List<Concert>> getConcerts() {
-        List<Concert> concerts = concertRepository.getConcerts();
+        List<Concert> concerts = concertRepository.getConcerts(null, null, null, null);
         if (concerts.isEmpty()) {
             return ResultData.from("F-1", "공연 정보가 없습니다.");
         }
         return ResultData.from("S-1", "공연 목록 조회 성공", "concerts", concerts);
+    }
+
+    public List<Concert> getConcertsFiltered(String sort, String status, String keyword) {
+        return concertRepository.getConcerts(sort, status, keyword, null);
+    }
+
+    public List<Concert> getTopConcertsByViewCount(int limit) {
+        return concertRepository.getConcerts("viewCount", null, null, limit);
+    }
+
+    public List<Concert> getTopConcertsByBookingRate(int limit) {
+        return concertRepository.getConcerts("bookingRate", null, null, limit);
+    }
+
+    public List<Concert> getUpcomingOpenConcerts(int limit) {
+        return concertRepository.getConcerts("latest", "OPEN", null, limit);
     }
 
     public ResultData<Concert> getConcertById(long id) {
