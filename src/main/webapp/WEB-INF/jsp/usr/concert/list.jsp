@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <c:set var="pageTitle" value="공연 목록"/>
 <%@ include file="../common/head.jspf"%>
@@ -95,13 +96,8 @@
 
               <%-- 예매율 배지 --%>
               <c:if test="${concert.extra__bookingRate > 0}">
-                <div class="absolute bottom-2 left-2 bg-black/60 rounded-full px-2 py-0.5 text-white text-xs font-bold">
-                  <c:choose>
-                    <c:when test="${concert.extra__bookingRate >= 90}">🔥</c:when>
-                    <c:when test="${concert.extra__bookingRate >= 50}">⚡</c:when>
-                    <c:otherwise>🎟</c:otherwise>
-                  </c:choose>
-                  <fmt:formatNumber xmlns:fmt="http://java.sun.com/jsp/jstl/fmt" value="${concert.extra__bookingRate}" maxFractionDigits="0"/>%
+                <div class="absolute bottom-2 left-2 bg-black/70 rounded-full px-2 py-0.5 text-white text-xs font-bold">
+                  <fmt:formatNumber value="${concert.extra__bookingRate}" maxFractionDigits="0"/>%
                 </div>
               </c:if>
 
@@ -120,7 +116,7 @@
                 </c:if>
                 <c:if test="${concert.extra__avgRating == 0}"><span></span></c:if>
                 <c:if test="${concert.extra__bookingRate > 0}">
-                  <span class="text-xs text-base-content/40 font-mono">예매 <fmt:formatNumber xmlns:fmt="http://java.sun.com/jsp/jstl/fmt" value="${concert.extra__bookingRate}" maxFractionDigits="0"/>%</span>
+                  <span class="text-xs text-base-content/40 font-mono">예매 <fmt:formatNumber value="${concert.extra__bookingRate}" maxFractionDigits="0"/>%</span>
                 </c:if>
               </div>
             </div>

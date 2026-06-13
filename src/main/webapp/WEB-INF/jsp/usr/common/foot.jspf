@@ -2,8 +2,8 @@
 
 <footer class="bg-base-100 border-t border-base-300 mt-auto">
   <div class="max-w-screen-xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-base-content/40">
-    <span class="font-black tracking-widest text-primary/60">CAST — LIVETICKET</span>
-    <span>© 2026 Cast. All rights reserved.</span>
+    <span class="font-black tracking-widest text-primary/60">C.A.S.T. LIVETICKET</span>
+    <span>&copy; 2026 Cast. All rights reserved.</span>
   </div>
 </footer>
 
