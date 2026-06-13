@@ -5,166 +5,62 @@
 
 <mapper namespace="com.example.demo.repository.ConcertRepository">
 
-	<select id="getConcerts"
-		resultType="com.example.demo.vo.Concert">
-		SELECT * FROM concert
-		WHERE parentId = 0
-		ORDER BY startAt ASC
-	</select>
+    <select id="getConcerts" resultType="com.example.demo.vo.Concert">
+        SELECT *, IF(reviewCount > 0, ROUND(totalRating / reviewCount, 1), 0) AS extra__avgRating
+        FROM concert
+        ORDER BY startDate ASC
+    </select>
 
-	<select id="getConcertById"
-		resultType="com.example.demo.vo.Concert">
-		SELECT *,
-		IF(reviewCount > 0, ROUND(totalRating /
-		reviewCount, 1), 0) AS extra__avgRating
-		FROM concert
-		WHERE id = #{id}
-	</select>
+    <select id="getConcertById" resultType="com.example.demo.vo.Concert">
+        SELECT *, IF(reviewCount > 0, ROUND(totalRating / reviewCount, 1), 0) AS extra__avgRating
+        FROM concert
+        WHERE id = #{id}
+    </select>
 
-	<select id="getSchedulesByMasterId"
-		resultType="com.example.demo.vo.Concert">
-		SELECT * FROM concert
-		WHERE parentId = #{masterId}
-		ORDER BY
-		performDate ASC
-	</select>
+    <insert id="insertConcert" parameterType="com.example.demo.vo.Concert"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO concert
+        (title, posterImg, startDate, endDate, bookingStartAt, body, status, regDate, updateDate)
+        VALUES
+        (#{title}, #{posterImg}, #{startDate}, #{endDate}, #{bookingStartAt},
+         #{body}, IFNULL(#{status}, 'DRAFT'), NOW(), NOW())
+    </insert>
 
-	<select id="getArtistsByConcertId"
-		resultType="com.example.demo.vo.Artist">
-		SELECT A.id, A.name, A.profileImg, CC.roleName
-		FROM
-		concertCasting AS CC
-		INNER JOIN artist AS A ON CC.artistId = A.id
-		WHERE
-		CC.concertId = #{concertId}
-	</select>
+    <update id="updateConcert" parameterType="com.example.demo.vo.Concert">
+        UPDATE concert
+        SET title         = #{title},
+            <if test="posterImg != null">posterImg = #{posterImg},</if>
+            startDate     = #{startDate},
+            endDate       = #{endDate},
+            bookingStartAt= #{bookingStartAt},
+            body          = #{body},
+            updateDate    = NOW()
+        WHERE id = #{id}
+    </update>
 
-	<select id="getRemainingSeats"
-		resultType="com.example.demo.vo.Seat">
-		SELECT
-		SG.name AS extra__gradeName,
-		SG.price AS extra__price,
-		COUNT(S.id) AS remainCount
-		FROM seatGrade AS SG
-		LEFT JOIN seat AS S ON
-		SG.id = S.gradeId AND S.`status` = 'AVAILABLE'
-		WHERE SG.concertId =
-		#{concertId}
-		GROUP BY SG.id
-	</select>
+    <update id="updateConcertStatus" parameterType="map">
+        UPDATE concert
+        SET `status` = #{status}, updateDate = NOW()
+        WHERE id = #{id}
+    </update>
 
-	<select id="getAllArtistsByMasterId"
-		resultType="com.example.demo.vo.Artist">
-		SELECT DISTINCT C.roleName, A.name, A.profileImg
-		FROM
-		concertCasting C
-		JOIN artist A ON C.artistId = A.id
-		WHERE C.concertId IN
-		(SELECT id FROM concert WHERE parentId = #{masterId}
-		OR id =
-		#{masterId})
-	</select>
+    <select id="getSalesStatsByConcertId" resultType="map">
+        SELECT IFNULL(SUM(s.totalSeats), 0)   AS totalSeats,
+               IFNULL(COUNT(r.id), 0)          AS reservedCount,
+               IFNULL(SUM(r.paidPrice), 0)     AS revenue
+        FROM `schedule` s
+        LEFT JOIN reservation r ON s.id = r.scheduleId AND r.status = 'CONFIRMED'
+        WHERE s.concertId = #{concertId}
+    </select>
 
-	<!-- Admin inserts -->
-	<insert id="insertConcert" parameterType="map">
-		INSERT INTO concert
-		(title, posterImg, performDate, startDate, endDate, startAt, totalSeats,
-		maxRows, maxCols, price, parentId, bookingStartAt, body, regDate,
-		updateDate)
-		VALUES
-		(#{title}, #{posterImg}, #{performDate}, #{startDate}, #{endDate}, #{startAt},
-		#{totalSeats}, #{maxRows}, #{maxCols}, #{price}, #{parentId},
-		#{bookingStartAt}, #{body}, NOW(), NOW())
-	</insert>
+    <update id="incrementViewCount">
+        UPDATE concert SET viewCount = viewCount + 1 WHERE id = #{id}
+    </update>
 
-	<select id="getSalesStats" resultType="map">
-		SELECT
-		c.totalSeats AS
-		totalSeats,
-		IFNULL(COUNT(r.id), 0) AS reservedCount,
-		IFNULL(SUM(r.paidPrice), 0) AS revenue
-		FROM concert c
-		LEFT JOIN
-		reservation r ON c.id =
-		r.concertId AND r.status = 'CONFIRMED'
-		WHERE
-		c.id = #{concertId}
-		GROUP
-		BY c.id
-	</select>
-
-	<select id="getLastInsertId" resultType="int">
-		SELECT LAST_INSERT_ID();
-	</select>
-
-	<insert id="insertSeatGrade" parameterType="map">
-		INSERT INTO seatGrade
-		(regDate, updateDate, concertId, name, price)
-		VALUES (NOW(), NOW(),
-		#{concertId}, #{name}, #{price})
-	</insert>
-
-	<update id="updateConcert" parameterType="map">
-		UPDATE concert
-		SET title
-		= #{title},
-		posterImg = #{posterImg},
-		performDate = #{performDate},
-		startAt = #{startAt},
-		totalSeats = #{totalSeats},
-		maxRows = #{maxRows},
-		maxCols = #{maxCols},
-		price = #{price},
-		bookingStartAt =
-		#{bookingStartAt},
-		body = #{body},
-		updateDate = NOW()
-		WHERE id = #{id}
-	</update>
-
-	<update id="updateConcertStatus" parameterType="map">
-		UPDATE concert
-		SET `status` = #{status},
-		updateDate = NOW()
-		WHERE id = #{id}
-	</update>
-
-	<delete id="deleteSeatGradesByConcertId" parameterType="int">
-		DELETE
-		FROM seatGrade WHERE concertId = #{concertId}
-	</delete>
-
-	<select id="getSeatGradesByConcertId" resultType="map"
-		parameterType="long">
-		SELECT id, name, price FROM seatGrade WHERE concertId =
-		#{concertId} ORDER BY id ASC
-	</select>
-
-	<delete id="deleteSeatsByConcertId" parameterType="int">
-		DELETE FROM
-		seat WHERE concertId = #{concertId}
-	</delete>
-
-	<insert id="insertSeat" parameterType="map">
-		INSERT INTO seat (regDate,
-		updateDate, concertId, gradeId, rowName, colNumber, `status`)
-		VALUES
-		(NOW(), NOW(), #{concertId}, #{gradeId}, #{row}, #{col}, #{status})
-	</insert>
-
-	<!-- insert artist -->
-	<insert id="insertArtist" parameterType="map">
-		INSERT INTO artist
-		(`name`, profileImg)
-		VALUES (#{name}, #{profileImg})
-	</insert>
-
-	<!-- insert casting mapping -->
-	<insert id="insertConcertCasting" parameterType="map">
-		INSERT INTO
-		concertCasting (concertId, artistId, roleName)
-		VALUES (#{concertId},
-		#{artistId}, #{roleName})
-	</insert>
+    <insert id="insertArtist" parameterType="com.example.demo.vo.Artist"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO artist (`name`, profileImg)
+        VALUES (#{name}, #{profileImg})
+    </insert>
 
 </mapper>

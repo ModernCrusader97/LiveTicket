@@ -7,12 +7,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-
 public class Seat {
     private long id;
     private String regDate;
     private String updateDate;
-    private long concertId;
+    private long scheduleId;
     private long gradeId;
     private String rowName;
     private int colNumber;

@@ -49,30 +49,22 @@
 							<h1 class="text-2xl md:text-3xl font-black mb-4 leading-tight">${concert.title}</h1>
 
 							<div class="space-y-2.5 text-sm md:text-base text-base-content/80 max-w-xl mx-auto sm:mx-0">
-								<div class="flex items-center gap-4">
-									<span class="w-20 font-bold opacity-50 shrink-0 text-left">공연일시</span>
-									<span class="font-semibold">${concert.performDate.substring(0, 16)}</span>
-								</div>
 								<div class="flex items-start gap-4">
-									<span class="w-20 font-bold opacity-50 shrink-0 text-left">예매기간</span>
-									<span class="font-semibold leading-relaxed">${concert.startDate.substring(0, 16)}
-										<br class="sm:hidden" />
-										~ ${concert.endDate.substring(0, 16)}
-									</span>
+									<span class="w-20 font-bold opacity-50 shrink-0 text-left">공연 기간</span>
+									<span class="font-semibold">${concert.startDate.substring(0, 10)} ~ ${concert.endDate.substring(0, 10)}</span>
 								</div>
+								<c:if test="${not empty concert.bookingStartAt}">
+								<div class="flex items-start gap-4">
+									<span class="w-20 font-bold opacity-50 shrink-0 text-left">예매 시작</span>
+									<span class="font-semibold">${concert.bookingStartAt.substring(0, 16)}</span>
+								</div>
+								</c:if>
 							</div>
 						</div>
 
 						<div class="border-t border-base-300 pt-4 mt-5">
-							<div class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2">등급별 기본 가격</div>
-							<div class="flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-1 text-sm">
-								<c:forEach var="seat" items="${remainSeats}">
-									<div>
-										<span class="font-bold text-primary">${seat.gradeName}석</span>
-										${seat.price}원
-									</div>
-								</c:forEach>
-							</div>
+							<div class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2">회차 / 잔여석 정보</div>
+							<p class="text-xs opacity-50">아래 회차 선택 패널에서 날짜를 선택하면 확인할 수 있습니다.</p>
 						</div>
 					</div>
 				</div>
@@ -260,7 +252,7 @@
 						<div id="mini-casting-container"></div>
 
 						<form action="../reservation/seatMap" method="GET">
-							<input type="hidden" id="selected-schedule-id" name="concertId" value="" />
+							<input type="hidden" id="selected-schedule-id" name="scheduleId" value="" />
 							<button type="submit" id="btn-booking" class="btn btn-primary w-full rounded-xl" disabled>예매하기 (좌석 선택)</button>
 						</form>
 					</div>

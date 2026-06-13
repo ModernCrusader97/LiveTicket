@@ -14,39 +14,36 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.repository.ReservationRepository;
-import com.example.demo.vo.Concert;
 import com.example.demo.vo.Reservation;
 import com.example.demo.vo.ResultData;
+import com.example.demo.vo.Schedule;
 import com.example.demo.vo.Seat;
 
 @Service
 public class ReservationService {
+
     @Autowired
     private ReservationRepository reservationRepository;
 
-    @Scheduled(fixedRate = 60000) // 1분(60,000ms)마다 실행
-    public void scheduledReleaseExpiredSeats() {
-        releaseExpiredSeats();
-    }
+    @Scheduled(fixedRate = 60000)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void releaseExpiredSeats() {
+    public void scheduledReleaseExpiredSeats() {
         try {
             reservationRepository.releaseExpiredSeats();
         } catch (Exception e) {
-            // 로그 기록 후 무시 (메인 로직에 영향을 주지 않도록 함)
             System.err.println("만료 좌석 해제 중 오류 발생: " + e.getMessage());
         }
     }
 
-    public List<Seat> getSeatsByConcertId(int concertId) {
-        return reservationRepository.getSeatsByConcertId(concertId);
+    public List<Seat> getSeatsByScheduleId(int scheduleId) {
+        return reservationRepository.getSeatsByScheduleId(scheduleId);
     }
 
     @Transactional
-    public ResultData holdSeats(int memberId, int concertId, String seatData) {
+    public ResultData holdSeats(int memberId, int scheduleId, String seatData) {
         String[] seatInfos = seatData.split(",");
 
-        int alreadyReservedCount = reservationRepository.getReservedCountByMemberId(memberId, concertId);
+        int alreadyReservedCount = reservationRepository.getReservedCountByMemberId(memberId, scheduleId);
         if (alreadyReservedCount + seatInfos.length > 4) {
             return ResultData.from("F-2", "최대 4매까지만 가능합니다.");
         }
@@ -60,8 +57,7 @@ public class ReservationService {
             seatList.add(seatMap);
         }
 
-        int affectedRows = reservationRepository.updateSeatsToPendingBulk(memberId, concertId, seatList);
-
+        int affectedRows = reservationRepository.updateSeatsToPendingBulk(memberId, scheduleId, seatList);
         if (affectedRows != seatInfos.length) {
             throw new RuntimeException("일부 좌석이 이미 선점되었거나 정보가 변경되었습니다. 다시 시도해주세요.");
         }
@@ -74,10 +70,10 @@ public class ReservationService {
     }
 
     @Transactional
-    public ResultData confirmReservation(int memberId, int concertId, String seatIds) {
+    public ResultData confirmReservation(int memberId, int scheduleId, String seatIds) {
         List<Integer> seatIdList = Arrays.stream(seatIds.split(","))
-                                         .map(Integer::parseInt)
-                                         .collect(Collectors.toList());
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
 
         for (int seatId : seatIdList) {
             Seat seat = reservationRepository.getSeatWithPrice(seatId);
@@ -91,49 +87,44 @@ public class ReservationService {
             }
 
             int paidPrice = seat.getExtra__price();
-            reservationRepository.saveReservation(memberId, concertId, seatId, paidPrice);
+            reservationRepository.saveReservation(memberId, scheduleId, seatId, paidPrice);
         }
 
         return ResultData.from("S-1", "예매 및 결제가 완료되었습니다.");
     }
 
-    public int getReservedCount(int memberId, int concertId) {
-        return reservationRepository.getReservedCountByMemberId(memberId, concertId);
+    public int getReservedCount(int memberId, int scheduleId) {
+        return reservationRepository.getReservedCountByMemberId(memberId, scheduleId);
     }
 
-	public Concert getConcertById(int concertId) {
-		return reservationRepository.getConcertById(concertId);
-	}
+    public Schedule getScheduleById(int scheduleId) {
+        return reservationRepository.getScheduleById(scheduleId);
+    }
 
-	public List<Seat> getSeatsByIds(List<Integer> seatIdList) {
-		return reservationRepository.getSeatsByIds(seatIdList);
-	}
+    public List<Seat> getSeatsByIds(List<Integer> seatIdList) {
+        return reservationRepository.getSeatsByIds(seatIdList);
+    }
 
-	@Transactional
-	public ResultData doCancel(int memberId, int reservationId) {
+    @Transactional
+    public ResultData doCancel(int memberId, int reservationId) {
+        Reservation reservation = reservationRepository.getReservationById(reservationId);
 
-	    Reservation reservation = reservationRepository.getReservationById(reservationId);
+        if (reservation == null) {
+            return ResultData.from("F-1", "존재하지 않는 예약입니다.");
+        }
+        if (reservation.getMemberId() != memberId) {
+            return ResultData.from("F-2", "취소 권한이 없습니다.");
+        }
+        if ("CANCELLED".equals(reservation.getStatus())) {
+            return ResultData.from("F-3", "이미 취소된 예약입니다.");
+        }
 
-	    if (reservation == null) {
-	        return ResultData.from("F-1", "존재하지 않는 예약입니다.");
-	    }
+        int seatUpdateRd = reservationRepository.releaseSeatAfterCancel(reservation.getSeatId());
+        if (seatUpdateRd == 0) {
+            throw new RuntimeException("좌석 상태를 변경할 수 없어 취소가 실패했습니다.");
+        }
 
-	    if (reservation.getMemberId() != memberId) {
-	        return ResultData.from("F-2", "취소 권한이 없습니다.");
-	    }
-
-	    if ("CANCELLED".equals(reservation.getStatus())) {
-	        return ResultData.from("F-3", "이미 취소된 예약입니다.");
-	    }
-
-	    int seatUpdateRd = reservationRepository.releaseSeatAfterCancel(reservation.getSeatId());
-
-	    if (seatUpdateRd == 0) {
-	        throw new RuntimeException("좌석 상태를 변경할 수 없어 취소가 실패했습니다.");
-	    }
-
-	    reservationRepository.cancelReservation(reservationId, memberId);
-
-	    return ResultData.from("S-1", "예매가 정상적으로 취소되었습니다.");
-	}
+        reservationRepository.cancelReservation(reservationId, memberId);
+        return ResultData.from("S-1", "예매가 정상적으로 취소되었습니다.");
+    }
 }

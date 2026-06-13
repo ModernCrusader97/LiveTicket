@@ -9,12 +9,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Builder
-
 public class Reservation {
-
-	private long id;
-	private long concertId;
-    // removed redundant seatIds field
+    private long id;
+    private long scheduleId;
     private String regDate;
     private String updateDate;
     private long memberId;
@@ -28,4 +25,5 @@ public class Reservation {
     private String extra__concertDate;
     private String extra__concertTitle;
     private String extra__seatInfo;
+    private long extra__masterConcertId;
 }

@@ -1,58 +1,55 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <!DOCTYPE html>
-<html>
+<html data-theme="night" lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>${pageTitle}</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-
-<script src="https://cdn.tailwindcss.com"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><c:out value="${pageTitle}" default="CAST"/> — 라이브티켓</title>
 
 <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
-<link rel="stylesheet" href="/common.css" />
-
+<style>
+  .neon-logo { filter: drop-shadow(0 0 8px rgba(99,179,237,0.5)); }
+  .nav-link { transition: color 0.2s; }
+  .nav-link:hover { color: oklch(var(--p)); }
+</style>
 </head>
-<body>
-	<header class="bg-base-200 border-b border-base-300">
-		<div class="flex h-20 mx-auto items-center px-6 text-xl">
+<body class="min-h-screen bg-base-200 text-base-content flex flex-col">
 
-			<a href="/" class="flex items-center hover:opacity-80 transition-opacity">
-				<img src="<c:url value='/img/LOGO.png' />" alt="CAST Logo" class="h-20 w-auto object-contain neon-logo" />
-			</a>
+<header class="bg-base-100 border-b border-base-300 sticky top-0 z-50 shadow-sm">
+  <div class="max-w-screen-xl mx-auto px-4 h-16 flex items-center gap-6">
 
-			<div class="flex-grow"></div>
+    <a href="/" class="shrink-0 flex items-center hover:opacity-80 transition-opacity">
+      <img src="<c:url value='/img/LOGO.png' />" alt="CAST" class="h-10 w-auto neon-logo" />
+    </a>
 
-			<ul class="flex gap-x-8 font-semibold tracking-wide text-base-content/80">
-				<li class="hover:text-primary transition-colors">
-					<a href="../review/list">Community</a>
-				</li>
-				<li class="hover:text-primary transition-colors">
-					<a href="../reservation/mylist">My Reservation</a>
-				</li>
-				<li class="hover:text-primary transition-colors">
-					<a href="../concert/list">LIST</a>
-				</li>
+    <nav class="hidden sm:flex items-center gap-6 text-sm font-semibold text-base-content/70 flex-1">
+      <a href="/usr/concert/list" class="nav-link hover:text-primary">공연 목록</a>
+      <a href="/usr/review/list" class="nav-link hover:text-primary">커뮤니티</a>
+      <a href="/usr/reservation/mylist" class="nav-link hover:text-primary">내 예매</a>
+    </nav>
 
-				<c:if test="${!rq.isLogined()}">
-					<li class="hover:text-primary transition-colors">
-						<a href="../member/login">LOGIN</a>
-					</li>
-					<li class="hover:text-primary transition-colors">
-						<a href="../member/join">JOIN</a>
-					</li>
-				</c:if>
-				<c:if test="${rq.isLogined()}">
-					<li class="hover:text-error transition-colors">
-						<a onclick="if(confirm('로그아웃 하시겠습니까?') == false) return false;" href="../member/doLogout">LOGOUT</a>
-					</li>
-				</c:if>
-			</ul>
-		</div>
-	</header>
+    <div class="flex-1 sm:flex-none"></div>
 
-	<h1>${pageTitle }</h1>
+    <div class="flex items-center gap-3">
+      <c:choose>
+        <c:when test="${rq.isLogined()}">
+          <span class="hidden sm:block text-xs text-base-content/50 font-medium">${rq.loginedMember.nickname}</span>
+          <a href="/usr/member/doLogout"
+             onclick="return confirm('로그아웃 하시겠습니까?')"
+             class="btn btn-ghost btn-sm text-error text-xs">LOGOUT</a>
+        </c:when>
+        <c:otherwise>
+          <a href="/usr/member/login" class="btn btn-ghost btn-sm text-xs font-bold">LOGIN</a>
+          <a href="/usr/member/join" class="btn btn-primary btn-sm text-xs font-bold">JOIN</a>
+        </c:otherwise>
+      </c:choose>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1">

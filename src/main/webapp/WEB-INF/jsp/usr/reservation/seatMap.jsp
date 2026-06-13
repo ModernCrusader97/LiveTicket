@@ -161,7 +161,7 @@
 			</div>
 
 			<form action="doHold" method="POST" onsubmit="return submitHoldForm(this);">
-				<input type="hidden" name="concertId" value="${param.concertId}">
+				<input type="hidden" name="scheduleId" value="${param.scheduleId}">
 				<input type="hidden" name="seatIds" id="hiddenSeatIds">
 
 				<button id="submit-btn" class="btn btn-primary btn-lg w-full shadow-lg" disabled>

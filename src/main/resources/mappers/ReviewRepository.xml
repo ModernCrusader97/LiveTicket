@@ -30,16 +30,10 @@
 	<update id="updateConcertRatingStats">
 		UPDATE concert
 		SET totalRating = IFNULL((
-		SELECT SUM(rating)
-		FROM review
-		WHERE (concertId = #{concertId} OR concertId IN (SELECT id FROM concert WHERE parentId = #{concertId}))
-		AND type = 'REVIEW'
+		    SELECT SUM(rating) FROM review WHERE concertId = #{concertId} AND type = 'REVIEW'
 		), 0),
 		reviewCount = (
-		SELECT COUNT(*)
-		FROM review
-		WHERE (concertId = #{concertId} OR concertId IN (SELECT id FROM concert WHERE parentId = #{concertId}))
-		AND type = 'REVIEW'
+		    SELECT COUNT(*) FROM review WHERE concertId = #{concertId} AND type = 'REVIEW'
 		)
 		WHERE id = #{concertId}
 	</update>
@@ -48,19 +42,13 @@
 		resultType="com.example.demo.vo.Review">
 		SELECT R.*,
 		M.nickname AS extra__writer,
-		C.title AS
-		extra__concertTitle
+		C.title AS extra__concertTitle
 		FROM review AS R
-		INNER JOIN `member` AS M ON
-		R.memberId = M.id
+		INNER JOIN `member` AS M ON R.memberId = M.id
 		INNER JOIN concert AS C ON R.concertId = C.id
-		WHERE
-		(
-		R.concertId = #{concertId}
-		OR R.concertId IN (SELECT id FROM concert WHERE parentId = #{concertId})
-		)
-		AND
-		R.`type` = #{type} ORDER BY R.id DESC
+		WHERE R.concertId = #{concertId}
+		AND R.`type` = #{type}
+		ORDER BY R.id DESC
 	</select>
 
 	<delete id="deleteReview" parameterType="int">
@@ -119,19 +107,12 @@
 		resultType="com.example.demo.vo.Review">
 		SELECT R.*,
 		M.nickname AS extra__writer,
-		C.title AS
-		extra__concertTitle
+		C.title AS extra__concertTitle
 		FROM review AS R
-		INNER JOIN `member` AS M ON
-		R.memberId = M.id
+		INNER JOIN `member` AS M ON R.memberId = M.id
 		INNER JOIN concert AS C ON R.concertId = C.id
-		WHERE
-		(
-		R.`type` = #{type}
-		AND (
-		R.concertId = #{concertId}
-		OR R.concertId IN (SELECT id FROM concert WHERE parentId = #{concertId})
-		)
-		) ORDER BY R.id DESC
+		WHERE R.concertId = #{concertId}
+		AND R.`type` = #{type}
+		ORDER BY R.id DESC
 	</select>
 </mapper>

@@ -1,9 +1,7 @@
 package com.example.demo.service;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,296 +13,316 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.repository.ConcertRepository;
-import com.example.demo.util.Ut;
+import com.example.demo.repository.ReservationRepository;
+import com.example.demo.repository.ScheduleRepository;
 import com.example.demo.util.FileUtil;
+import com.example.demo.util.Ut;
+import com.example.demo.vo.Artist;
+import com.example.demo.vo.Concert;
 import com.example.demo.vo.ResultData;
+import com.example.demo.vo.Schedule;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class ConcertAdminService {
 
-	@Autowired
-	private ConcertRepository concertRepository;
+    @Autowired
+    private ConcertRepository concertRepository;
 
-	@Autowired
-	private com.example.demo.repository.ReservationRepository reservationRepository;
+    @Autowired
+    private ScheduleRepository scheduleRepository;
 
-	@Value("${custom.upload.path:src/main/resources/static/img}")
-	private String uploadPath;
+    @Autowired
+    private ReservationRepository reservationRepository;
 
-	@Transactional
-	public ResultData createConcert(String title, MultipartFile posterFile, String performDate, String startAt,
-			int totalSeats, int maxRows, int maxCols, int price, long parentId, String bookingStartAt, String body,
-			List<String> seatGradeNames, List<Integer> seatGradePrices, List<Integer> gradeRowCounts,
-			String disabledSeatsStr, String schedulesData, List<String> newArtistNames, List<String> newArtistNotes,
-			List<String> newArtistTempIds, MultipartFile[] artistFiles) {
+    @Value("${custom.upload.path:src/main/resources/static/img}")
+    private String uploadPath;
 
-		if (Ut.isEmpty(title)) {
-			return ResultData.from("F-1", "공연명을 입력해주세요.");
-		}
+    private static final int MAX_SEAT_DIMENSION = 200;
 
-		String posterFileName = null;
-		if (posterFile != null && !posterFile.isEmpty()) {
-			posterFileName = FileUtil.saveFile(posterFile, uploadPath);
-		}
+    @Transactional
+    public ResultData createConcert(String title, MultipartFile posterFile,
+            String bookingStartAt, String body,
+            int totalSeats, int maxRows, int maxCols, int price,
+            List<String> seatGradeNames, List<Integer> seatGradePrices, List<Integer> gradeRowCounts,
+            String disabledSeatsStr, String schedulesData,
+            List<String> newArtistNames, List<String> newArtistNotes,
+            List<String> newArtistTempIds, MultipartFile[] artistFiles) {
 
-		// 비활성화 좌석 파싱을 위한 리스트 준비
-		List<String> disabledList = java.util.Arrays.asList(disabledSeatsStr.split(","));
-		// Handle new artist inserts first (if any)
-		Map<String, Integer> tempIdToRealId = new HashMap<>();
-		if (newArtistNames != null && !newArtistNames.isEmpty()) {
-			for (int i = 0; i < newArtistNames.size(); i++) {
-				String aName = newArtistNames.get(i);
-				String aNote = (newArtistNotes != null && newArtistNotes.size() > i) ? newArtistNotes.get(i) : null;
-				String tempId = (newArtistTempIds != null && newArtistTempIds.size() > i) ? newArtistTempIds.get(i)
-						: "NEW_" + (i + 1);
-				MultipartFile afile = (artistFiles != null && artistFiles.length > i) ? artistFiles[i] : null;
-				String profileImg = null;
-				if (afile != null && !afile.isEmpty()) {
-					profileImg = FileUtil.saveFile(afile, uploadPath);
-				}
-				concertRepository.insertArtist(aName, profileImg);
-				int artistId = concertRepository.getLastInsertId();
-				tempIdToRealId.put(tempId, artistId);
-			}
-		}
+        if (Ut.isEmpty(title)) {
+            return ResultData.from("F-1", "공연명을 입력해주세요.");
+        }
 
-		ObjectMapper om = new ObjectMapper();
-		List<Map<String, Object>> schedules = new ArrayList<>();
-		if (schedulesData != null && !schedulesData.trim().isEmpty()) {
-			try {
-				schedules = om.readValue(schedulesData, new TypeReference<List<Map<String, Object>>>() {
-				});
-			} catch (Exception e) {
-				e.printStackTrace();
-				return ResultData.from("F-2", "스케줄 파싱 실패: " + e.getMessage());
-			}
-		}
+        String posterFileName = null;
+        if (posterFile != null && !posterFile.isEmpty()) {
+            posterFileName = FileUtil.saveFile(posterFile, uploadPath);
+        }
 
-		String calculatedStartDate = null;
-		String calculatedEndDate = null;
+        // Insert new artists first and build tempId → realId map
+        Map<String, Long> tempIdToRealId = new HashMap<>();
+        if (newArtistNames != null && !newArtistNames.isEmpty()) {
+            for (int i = 0; i < newArtistNames.size(); i++) {
+                String aName = newArtistNames.get(i);
+                String aNote = (newArtistNotes != null && i < newArtistNotes.size()) ? newArtistNotes.get(i) : null;
+                String tempId = (newArtistTempIds != null && i < newArtistTempIds.size()) ? newArtistTempIds.get(i) : "NEW_" + (i + 1);
+                MultipartFile aFile = (artistFiles != null && i < artistFiles.length) ? artistFiles[i] : null;
 
-		if (schedules != null && !schedules.isEmpty()) {
-			calculatedStartDate = schedules.stream().map(s -> s.get("performDate").toString()).min(String::compareTo)
-					.orElse(null);
+                String profileImg = null;
+                if (aFile != null && !aFile.isEmpty()) {
+                    profileImg = FileUtil.saveFile(aFile, uploadPath);
+                }
 
-			calculatedEndDate = schedules.stream().map(s -> s.get("performDate").toString()).max(String::compareTo)
-					.orElse(null);
-		}
+                Artist artist = Artist.builder().name(aName).profileImg(profileImg).build();
+                concertRepository.insertArtist(artist);
+                tempIdToRealId.put(tempId, artist.getId());
+            }
+        }
 
-		// If schedules provided -> create master concert (parentId should be 0)
-		if (schedules != null && !schedules.isEmpty() && parentId == 0) {
+        // Parse schedules JSON
+        List<Map<String, Object>> schedules = new ArrayList<>();
+        if (!Ut.isEmpty(schedulesData)) {
+            try {
+                schedules = new ObjectMapper().readValue(schedulesData, new TypeReference<List<Map<String, Object>>>() {});
+            } catch (Exception e) {
+                return ResultData.from("F-2", "스케줄 파싱 실패: " + e.getMessage());
+            }
+        }
+        if (schedules.isEmpty()) {
+            return ResultData.from("F-3", "최소 1개의 회차를 등록해야 합니다.");
+        }
 
-			// [핵심 로직 2] 마스터 공연 생성: 계산된 startDate, endDate 주입 (performDate는 null)
-			concertRepository.insertConcert(title, posterFileName, null, calculatedStartDate, calculatedEndDate,
-					startAt, totalSeats, maxRows, maxCols, price, 0, bookingStartAt, body);
-			int masterId = concertRepository.getLastInsertId();
+        // Compute master concert date range from schedules
+        String calculatedStartDate = schedules.stream()
+                .map(s -> s.get("performDate"))
+                .filter(d -> d != null)
+                .map(Object::toString)
+                .min(String::compareTo)
+                .orElse(null);
+        String calculatedEndDate = schedules.stream()
+                .map(s -> s.get("performDate"))
+                .filter(d -> d != null)
+                .map(Object::toString)
+                .max(String::compareTo)
+                .orElse(null);
 
-			// for each schedule create a child concert and seats + castings
-			for (Map<String, Object> sch : schedules) {
-				String schTitle = sch.getOrDefault("title", "").toString();
-				String schPerformDate = sch.getOrDefault("performDate", "").toString();
-				String schBody = sch.getOrDefault("body", "").toString();
+        // Create master concert
+        Concert concert = Concert.builder()
+                .title(title)
+                .posterImg(posterFileName)
+                .startDate(calculatedStartDate)
+                .endDate(calculatedEndDate)
+                .bookingStartAt(bookingStartAt)
+                .body(body)
+                .status("DRAFT")
+                .build();
+        concertRepository.insertConcert(concert);
+        long masterId = concert.getId();
 
-				// [핵심 로직 3] 하위(회차) 공연 생성: startDate, endDate 자리에 null 주입
-				concertRepository.insertConcert((schTitle != null && !schTitle.isEmpty()) ? schTitle : title,
-						posterFileName, schPerformDate, null, null, startAt, totalSeats, maxRows, maxCols, price,
-						masterId, bookingStartAt, schBody);
-				int childId = concertRepository.getLastInsertId();
-				
-				// seat grades and seats per child
-				if (seatGradeNames != null && !seatGradeNames.isEmpty()) {
-					for (int i = 0; i < seatGradeNames.size(); i++) {
-						String gradeName = seatGradeNames.get(i);
-						int gradePrice = seatGradePrices.get(i);
-						concertRepository.insertSeatGrade(childId, gradeName, gradePrice);
-						int gradeId = concertRepository.getLastInsertId();
+        // Parse disabled seats safely
+        List<String> disabledList = parseDisabledSeats(disabledSeatsStr);
 
-						int rowsForGrade = gradeRowCounts.get(i);
-						for (int r = 1; r <= rowsForGrade; r++) {
-							for (int c = 1; c <= maxCols; c++) {
-								String seatKey = i + "_" + r + "_" + c;
-								String status = "AVAILABLE";
-								if (disabledList.contains(seatKey)) {
-									status = "BLOCKED";
-								}
-								concertRepository.insertSeat(childId, gradeId, r, c, status);
-							}
-						}
-					}
-				}
+        // Validate seat dimension to prevent DoS
+        int safeMaxCols = Math.min(maxCols, MAX_SEAT_DIMENSION);
 
-				// castings
-				Object castingsObj = sch.get("castings");
-				if (castingsObj instanceof List) {
-					List<Map<String, Object>> castings = (List<Map<String, Object>>) castingsObj;
-					for (Map<String, Object> cast : castings) {
-						String artistIdStr = String.valueOf(cast.getOrDefault("artistId", ""));
-						String roleName = String.valueOf(cast.getOrDefault("roleName", ""));
-						if (artistIdStr == null || artistIdStr.isEmpty() || roleName == null || roleName.isEmpty())
-							continue;
-						int realArtistId = -1;
-						if (artistIdStr.startsWith("NEW_")) {
-							Integer mapped = tempIdToRealId.get(artistIdStr);
-							if (mapped == null)
-								continue;
-							realArtistId = mapped;
-						} else {
-							try {
-								realArtistId = Integer.parseInt(artistIdStr);
-							} catch (Exception e) {
-								continue;
-							}
-						}
-						concertRepository.insertConcertCasting(childId, realArtistId, roleName);
-					}
-				}
-			}
+        // Create schedules with seats and castings
+        for (Map<String, Object> sch : schedules) {
+            String schPerformDate = sch.getOrDefault("performDate", "").toString();
+            String schTitle = sch.getOrDefault("title", "").toString();
+            String schBody = sch.getOrDefault("body", "").toString();
 
-			return ResultData.from("S-1", "공연 마스터 + 회차 등록 완료", "id", masterId);
-		}
+            Schedule schedule = Schedule.builder()
+                    .concertId(masterId)
+                    .title(Ut.isEmpty(schTitle) ? title : schTitle)
+                    .performDate(schPerformDate)
+                    .startAt(null)
+                    .totalSeats(totalSeats)
+                    .maxRows(maxRows)
+                    .maxCols(safeMaxCols)
+                    .price(price)
+                    .body(schBody)
+                    .status("DRAFT")
+                    .build();
+            scheduleRepository.insertSchedule(schedule);
+            long scheduleId = schedule.getId();
 
-		// 기존 단일 공연 등록 플로우 (parentId may be non-zero => create single concert and seats)
-		concertRepository.insertConcert(title, posterFileName, performDate, null, null, 
-				startAt, totalSeats, maxRows, maxCols, price, parentId, bookingStartAt, body);
+            // Create seat grades and seats
+            if (seatGradeNames != null && !seatGradeNames.isEmpty()) {
+                createSeatsForSchedule((int) scheduleId, seatGradeNames, seatGradePrices, gradeRowCounts, safeMaxCols, disabledList);
+            }
 
-		int concertId = concertRepository.getLastInsertId();
+            // Create castings
+            Object castingsObj = sch.get("castings");
+            if (castingsObj instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> castings = (List<Map<String, Object>>) castingsObj;
+                for (Map<String, Object> cast : castings) {
+                    String artistIdStr = String.valueOf(cast.getOrDefault("artistId", ""));
+                    String roleName = String.valueOf(cast.getOrDefault("roleName", ""));
+                    if (Ut.isEmpty(artistIdStr) || Ut.isEmpty(roleName)) continue;
 
-		if (seatGradeNames != null && !seatGradeNames.isEmpty()) {
-			for (int i = 0; i < seatGradeNames.size(); i++) {
-				String gradeName = seatGradeNames.get(i);
-				int gradePrice = seatGradePrices.get(i);
-				concertRepository.insertSeatGrade(concertId, gradeName, gradePrice);
-				int gradeId = concertRepository.getLastInsertId();
+                    long realArtistId;
+                    if (artistIdStr.startsWith("NEW_")) {
+                        Long mapped = tempIdToRealId.get(artistIdStr);
+                        if (mapped == null) continue;
+                        realArtistId = mapped;
+                    } else {
+                        try {
+                            realArtistId = Long.parseLong(artistIdStr);
+                        } catch (NumberFormatException e) {
+                            continue;
+                        }
+                    }
 
-				int rowsForGrade = gradeRowCounts.get(i);
-				for (int r = 1; r <= rowsForGrade; r++) {
-					for (int c = 1; c <= maxCols; c++) {
-						// "등급인덱스_행_열" 조합 키 생성 (예: "0_1_3")
-						String seatKey = i + "_" + r + "_" + c;
-						String status = "AVAILABLE";
+                    Map<String, Object> castingParams = new HashMap<>();
+                    castingParams.put("scheduleId", scheduleId);
+                    castingParams.put("artistId", realArtistId);
+                    castingParams.put("roleName", roleName);
+                    scheduleRepository.insertConcertCasting(castingParams);
+                }
+            }
+        }
 
-						if (disabledList.contains(seatKey)) {
-							status = "BLOCKED"; // 통로나 죽은 자리는 BLOCKED 처리
-						}
+        return ResultData.from("S-1", "공연 등록 완료", "id", masterId);
+    }
 
-						concertRepository.insertSeat(concertId, gradeId, r, c, status);
-					}
-				}
-			}
-		}
+    private void createSeatsForSchedule(int scheduleId, List<String> seatGradeNames,
+            List<Integer> seatGradePrices, List<Integer> gradeRowCounts,
+            int maxCols, List<String> disabledList) {
+        for (int i = 0; i < seatGradeNames.size(); i++) {
+            String gradeName = seatGradeNames.get(i);
+            int gradePrice = (seatGradePrices != null && i < seatGradePrices.size()) ? seatGradePrices.get(i) : 0;
+            int rowsForGrade = (gradeRowCounts != null && i < gradeRowCounts.size()) ? gradeRowCounts.get(i) : 0;
 
-		return ResultData.from("S-1", "공연 등록 완료", "id", concertId);
-	}
+            // Clamp row count to prevent DoS
+            rowsForGrade = Math.min(rowsForGrade, MAX_SEAT_DIMENSION);
 
-	// helper: create seats and grades for a concert
-	private void createSeats(int concertId, List<String> seatGradeNames, List<Integer> seatGradePrices,
-			List<Integer> gradeRowCounts, int maxCols, String disabledSeatsStr) {
-		List<String> disabledList = Arrays
-				.asList((disabledSeatsStr == null) ? new String[] {} : disabledSeatsStr.split(","));
+            Map<String, Object> gradeParams = new HashMap<>();
+            gradeParams.put("scheduleId", scheduleId);
+            gradeParams.put("name", gradeName);
+            gradeParams.put("price", gradePrice);
+            scheduleRepository.insertSeatGrade(gradeParams);
+            int gradeId = ((Number) gradeParams.get("id")).intValue();
 
-		for (int i = 0; i < seatGradeNames.size(); i++) {
-			String gradeName = seatGradeNames.get(i);
-			int gradePrice = (seatGradePrices != null && seatGradePrices.size() > i) ? seatGradePrices.get(i) : 0;
-			concertRepository.insertSeatGrade(concertId, gradeName, gradePrice);
-			int gradeId = concertRepository.getLastInsertId();
+            for (int r = 1; r <= rowsForGrade; r++) {
+                for (int c = 1; c <= maxCols; c++) {
+                    String seatKey = i + "_" + r + "_" + c;
+                    String status = disabledList.contains(seatKey) ? "BLOCKED" : "AVAILABLE";
+                    Map<String, Object> seatParams = new HashMap<>();
+                    seatParams.put("scheduleId", scheduleId);
+                    seatParams.put("gradeId", gradeId);
+                    seatParams.put("row", r);
+                    seatParams.put("col", c);
+                    seatParams.put("status", status);
+                    scheduleRepository.insertSeat(seatParams);
+                }
+            }
+        }
+    }
 
-			int rowsForGrade = (gradeRowCounts != null && gradeRowCounts.size() > i) ? gradeRowCounts.get(i) : 0;
-			for (int r = 1; r <= rowsForGrade; r++) {
-				for (int c = 1; c <= maxCols; c++) {
-					String seatKey = i + "_" + r + "_" + c;
-					String status = "AVAILABLE";
-					if (disabledList.contains(seatKey)) {
-						status = "BLOCKED";
-					}
-					concertRepository.insertSeat(concertId, gradeId, r, c, status);
-				}
-			}
-		}
-	}
+    public ResultData changeConcertStatus(long id, String status) {
+        if (Ut.isEmpty(status)) {
+            return ResultData.from("F-1", "상태를 지정해주세요.");
+        }
+        String s = status.toUpperCase();
+        if (!s.equals("DRAFT") && !s.equals("OPEN") && !s.equals("PAUSED") && !s.equals("CLOSED")) {
+            return ResultData.from("F-2", "허용되지 않는 상태값입니다.");
+        }
+        concertRepository.updateConcertStatus(id, s);
+        return ResultData.from("S-1", "공연 상태가 변경되었습니다.");
+    }
 
-	public ResultData changeConcertStatus(long id, String status) {
-		// basic validation
-		if (Ut.isEmpty(status)) {
-			return ResultData.from("F-1", "상태를 지정해주세요.");
-		}
+    public ResultData changeScheduleStatus(long scheduleId, String status) {
+        if (Ut.isEmpty(status)) {
+            return ResultData.from("F-1", "상태를 지정해주세요.");
+        }
+        String s = status.toUpperCase();
+        if (!s.equals("DRAFT") && !s.equals("OPEN") && !s.equals("PAUSED") && !s.equals("CLOSED")) {
+            return ResultData.from("F-2", "허용되지 않는 상태값입니다.");
+        }
+        scheduleRepository.updateScheduleStatus(scheduleId, s);
+        return ResultData.from("S-1", "회차 상태가 변경되었습니다.");
+    }
 
-		// allow only known statuses
-		String s = status.toUpperCase();
-		if (!s.equals("DRAFT") && !s.equals("OPEN") && !s.equals("PAUSED") && !s.equals("CLOSED")) {
-			return ResultData.from("F-2", "허용되지 않는 상태값입니다.");
-		}
+    @Transactional
+    public ResultData updateConcert(long id, String title, MultipartFile posterFile,
+            String bookingStartAt, String body) {
+        if (Ut.isEmpty(title)) {
+            return ResultData.from("F-1", "공연명을 입력해주세요.");
+        }
 
-		concertRepository.updateConcertStatus(id, s);
-		return ResultData.from("S-1", "공연 상태가 변경되었습니다.");
-	}
+        Concert existing = concertRepository.getConcertById(id);
+        if (existing == null) {
+            return ResultData.from("F-2", "존재하지 않는 공연입니다.");
+        }
 
-	@Transactional
-	public ResultData updateConcert(long id, String title, MultipartFile posterFile, String performDate, String startAt,
-			Integer totalSeats, Integer maxRows, Integer maxCols, Integer price, String bookingStartAt, String body,
-			List<String> seatGradeNames, List<Integer> seatGradePrices, List<Integer> gradeRowCounts,
-			String disabledSeatsStr) {
+        String posterFileName = null;
+        if (posterFile != null && !posterFile.isEmpty()) {
+            posterFileName = FileUtil.saveFile(posterFile, uploadPath);
+        }
 
-		if (Ut.isEmpty(title)) {
-			return ResultData.from("F-1", "공연명을 입력해주세요.");
-		}
+        Concert updated = Concert.builder()
+                .id(id)
+                .title(title)
+                .posterImg(posterFileName != null ? posterFileName : existing.getPosterImg())
+                .startDate(existing.getStartDate())
+                .endDate(existing.getEndDate())
+                .bookingStartAt(bookingStartAt)
+                .body(body)
+                .build();
+        concertRepository.updateConcert(updated);
+        return ResultData.from("S-1", "공연 정보가 수정되었습니다.");
+    }
 
-		String posterFileName = null;
-		if (posterFile != null && !posterFile.isEmpty()) {
-			posterFileName = FileUtil.saveFile(posterFile, uploadPath);
-		}
+    @Transactional
+    public ResultData updateSchedule(long scheduleId, String title, String performDate, String startAt,
+            Integer totalSeats, Integer maxRows, Integer maxCols, Integer price, String body,
+            List<String> seatGradeNames, List<Integer> seatGradePrices, List<Integer> gradeRowCounts,
+            String disabledSeatsStr) {
 
-		// Use existing values if null provided for counts
-		int ts = (totalSeats == null) ? 0 : totalSeats;
-		int mr = (maxRows == null) ? 0 : maxRows;
-		int mc = (maxCols == null) ? 0 : maxCols;
-		int pr = (price == null) ? 0 : price;
+        Schedule existing = scheduleRepository.getScheduleById(scheduleId);
+        if (existing == null) {
+            return ResultData.from("F-1", "존재하지 않는 회차입니다.");
+        }
 
-		concertRepository.updateConcert(id, title, posterFileName, performDate, startAt, ts, mr, mc, pr, bookingStartAt,
-				body);
+        Schedule updated = Schedule.builder()
+                .id(scheduleId)
+                .concertId(existing.getConcertId())
+                .title(title)
+                .performDate(performDate)
+                .startAt(startAt)
+                .totalSeats(totalSeats != null ? totalSeats : existing.getTotalSeats())
+                .maxRows(maxRows != null ? maxRows : existing.getMaxRows())
+                .maxCols(maxCols != null ? Math.min(maxCols, MAX_SEAT_DIMENSION) : existing.getMaxCols())
+                .price(price != null ? price : existing.getPrice())
+                .body(body)
+                .build();
+        scheduleRepository.updateSchedule(updated);
 
-		// If seat structure provided -> replace seat grades and seats
-		if (seatGradeNames != null && !seatGradeNames.isEmpty()) {
-			// safety: don't allow structure change if confirmed reservations exist
-			int confirmed = reservationRepository.countConfirmedByConcertId(id);
-			if (confirmed > 0) {
-				return ResultData.from("F-3", "이미 예매된 좌석이 있어 좌석 구조를 변경할 수 없습니다.");
-			}
+        if (seatGradeNames != null && !seatGradeNames.isEmpty()) {
+            int confirmed = reservationRepository.countConfirmedByScheduleId(scheduleId);
+            if (confirmed > 0) {
+                return ResultData.from("F-3", "이미 예매된 좌석이 있어 좌석 구조를 변경할 수 없습니다.");
+            }
+            if ("OPEN".equalsIgnoreCase(existing.getStatus())) {
+                return ResultData.from("F-4", "판매중인 상태에서는 좌석 구조를 변경할 수 없습니다. 먼저 PAUSED로 변경하세요.");
+            }
 
-			// safety: don't allow structure change if concert status is OPEN (판매중)
-			com.example.demo.vo.Concert existing = concertRepository.getConcertById(id);
-			if (existing != null && "OPEN".equalsIgnoreCase(existing.getStatus())) {
-				return ResultData.from("F-4", "공연이 판매중인 상태에서는 좌석 구조를 변경할 수 없습니다. 먼저 판매중지(PAUSED)로 변경하세요.");
-			}
+            scheduleRepository.deleteSeatGradesByScheduleId((int) scheduleId);
+            scheduleRepository.deleteSeatsByScheduleId((int) scheduleId);
 
-			// delete previous grades & seats
-			concertRepository.deleteSeatGradesByConcertId((int) id);
-			concertRepository.deleteSeatsByConcertId((int) id);
+            int safeMaxCols = Math.min(updated.getMaxCols(), MAX_SEAT_DIMENSION);
+            List<String> disabledList = parseDisabledSeats(disabledSeatsStr);
+            createSeatsForSchedule((int) scheduleId, seatGradeNames, seatGradePrices, gradeRowCounts, safeMaxCols, disabledList);
+        }
 
-			List<String> disabledList = java.util.Arrays
-					.asList((disabledSeatsStr == null) ? new String[] {} : disabledSeatsStr.split(","));
+        return ResultData.from("S-1", "회차 정보가 수정되었습니다.");
+    }
 
-			for (int i = 0; i < seatGradeNames.size(); i++) {
-				String gradeName = seatGradeNames.get(i);
-				int gradePrice = (seatGradePrices != null && seatGradePrices.size() > i) ? seatGradePrices.get(i) : 0;
-				concertRepository.insertSeatGrade((int) id, gradeName, gradePrice);
-				int gradeId = concertRepository.getLastInsertId();
-
-				int rowsForGrade = (gradeRowCounts != null && gradeRowCounts.size() > i) ? gradeRowCounts.get(i) : 0;
-				for (int r = 1; r <= rowsForGrade; r++) {
-					for (int c = 1; c <= mc; c++) {
-						String seatKey = i + "_" + r + "_" + c;
-						String status = "AVAILABLE";
-						if (disabledList.contains(seatKey)) {
-							status = "BLOCKED";
-						}
-						concertRepository.insertSeat((int) id, gradeId, r, c, status);
-					}
-				}
-			}
-		}
-
-		return ResultData.from("S-1", "공연 정보가 수정되었습니다.");
-	}
+    private List<String> parseDisabledSeats(String disabledSeatsStr) {
+        if (Ut.isEmpty(disabledSeatsStr)) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(disabledSeatsStr.split(","));
+    }
 }

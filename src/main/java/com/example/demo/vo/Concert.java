@@ -9,29 +9,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-
 public class Concert {
-	private long id;
-	private long parentId;
-
-    private String performDate;
+    private long id;
+    private String title;
+    private String posterImg;
     private String startDate;
     private String endDate;
-    private String title;
     private String bookingStartAt;
-    private String startAt;
-    private int totalSeats;
-    private int maxRows;
-    private int maxCols;
-    private int price;
     private String body;
-    private int rating;
     private int reviewCount;
-	private int totalRating;
-	private String posterImg;
+    private int totalRating;
+    private String status;
+    private String regDate;
+    private String updateDate;
 
-	private double extra__avgRating;
-
-    private String status; // DRAFT, OPEN, PAUSED, CLOSED
-
+    private double extra__avgRating;
+    private int viewCount;
 }

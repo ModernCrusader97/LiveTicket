@@ -46,6 +46,13 @@ body {
 </head>
 <body class="p-6">
 
+<nav class="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 border-b border-amber-900/40 h-12 flex items-center px-6 gap-5 text-sm backdrop-blur">
+  <a href="/admin/concert/list" class="text-amber-400 font-black tracking-widest">C.A.S.T <span style="background:#1e293b;border:1px solid #f59e0b55;color:#f59e0b;padding:1px 8px;border-radius:999px;font-size:11px;font-family:monospace">ADMIN</span></a>
+  <a href="/admin/concert/list" class="text-slate-400 hover:text-amber-400 transition-colors">공연 목록</a>
+  <a href="/admin/concert/create" class="text-amber-400 font-semibold">+ 공연 등록</a>
+</nav>
+<div style="height:48px"></div>
+
 	<div class="max-w-[1400px] mx-auto">
 		<div class="flex items-center justify-between mb-6 border-b border-blue-900 pb-4">
 			<h1 class="text-3xl font-bold tracking-wider text-cyan-400">공연 마스터 & 회차 통합 등록</h1>
@@ -346,7 +353,8 @@ function prepareSubmit() {
             const roleName = $(this).find('.casting-role-input').val().trim();
             if(artistId && roleName) castingsList.push({ artistId: artistId, roleName: roleName });
         });
-        schedulesList.push({ performDate: scDate, body: scBody, castings: castingsList });
+        const scTitle = $(this).find('.sc-title').val().trim();
+        schedulesList.push({ title: scTitle, performDate: scDate, body: scBody, castings: castingsList });
     });
 
     if(!isValid) return false;

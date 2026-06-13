@@ -67,15 +67,11 @@ public class Rq {
 	public void printHistoryBack(String msg) throws IOException {
 		resp.setContentType("text/html; charset=UTF-8");
 		println("<script>");
-		println("console.log(123);");
-
 		if (!Ut.isEmpty(msg)) {
-			println("alert('" + msg.replace("'", "\\") + "');");
+			String safeMsg = msg.replace("\\", "\\\\").replace("'", "\\'").replace("\r", "").replace("\n", "");
+			println("alert('" + safeMsg + "');");
 		}
-		println("console.log(456);");
-
 		println("history.back();");
-
 		println("</script>");
 		resp.getWriter().flush();
 		resp.getWriter().close();

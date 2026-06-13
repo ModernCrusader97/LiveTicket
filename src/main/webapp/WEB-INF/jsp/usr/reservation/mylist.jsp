@@ -60,7 +60,7 @@
                                                 </c:if>
                                                 
                                                 <c:if test="${res.extra__concertDate <= nowStr}">
-                                                    <a href="../review/write?type=REVIEW&concertId=${res.concertId}&orderId=${res.id}" 
+                                                    <a href="../review/write?type=REVIEW&concertId=${res.extra__masterConcertId}&orderId=${res.id}"
                                                        class="btn btn-success btn-sm text-white font-bold shadow-sm">
                                                         ✍️ 후기 쓰기
                                                     </a>

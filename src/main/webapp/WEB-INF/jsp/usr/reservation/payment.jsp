@@ -15,8 +15,8 @@
 
                 <div class="bg-gray-50 p-4 rounded-lg mb-6">
                     <p class="text-sm text-gray-500">공연 정보</p>
-                    <p class="text-xl font-bold">${concert.title}</p>
-                    <p class="text-gray-600">${concert.performDate}</p>
+                    <p class="text-xl font-bold">${schedule.extra__concertTitle}</p>
+                    <p class="text-gray-600">${schedule.performDate}</p>
                 </div>
 
                 <div class="mb-6">
@@ -49,7 +49,7 @@
 
                 <div class="flex flex-col gap-3">
                     <form action="doConfirm" method="POST" onsubmit="if(confirm('정말로 예매하시겠습니까?')) return true; return false;">
-                        <input type="hidden" name="concertId" value="${concert.id}">
+                        <input type="hidden" name="scheduleId" value="${schedule.id}">
                         <input type="hidden" name="seatIds" value="${seatIds}">
                         <button type="submit" class="btn btn-primary btn-lg w-full">결제 및 예매 확정</button>
                     </form>

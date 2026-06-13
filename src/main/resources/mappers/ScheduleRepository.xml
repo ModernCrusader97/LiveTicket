@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.ScheduleRepository">
+
+    <insert id="insertSchedule" parameterType="com.example.demo.vo.Schedule"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `schedule`
+        (concertId, title, performDate, startAt, totalSeats, maxRows, maxCols,
+         price, body, status, regDate, updateDate)
+        VALUES
+        (#{concertId}, #{title}, #{performDate}, #{startAt}, #{totalSeats},
+         #{maxRows}, #{maxCols}, #{price}, #{body}, IFNULL(#{status}, 'DRAFT'),
+         NOW(), NOW())
+    </insert>
+
+    <select id="getScheduleById" resultType="com.example.demo.vo.Schedule">
+        SELECT s.*,
+               c.title        AS extra__concertTitle,
+               c.posterImg    AS extra__posterImg,
+               c.bookingStartAt AS extra__bookingStartAt,
+               c.startDate    AS extra__concertStartDate,
+               c.endDate      AS extra__concertEndDate
+        FROM `schedule` s
+        INNER JOIN concert c ON s.concertId = c.id
+        WHERE s.id = #{id}
+    </select>
+
+    <select id="getSchedulesByConcertId" resultType="com.example.demo.vo.Schedule">
+        SELECT * FROM `schedule`
+        WHERE concertId = #{concertId}
+        ORDER BY performDate ASC
+    </select>
+
+    <update id="updateSchedule" parameterType="com.example.demo.vo.Schedule">
+        UPDATE `schedule`
+        SET title      = #{title},
+            performDate= #{performDate},
+            startAt    = #{startAt},
+            totalSeats = #{totalSeats},
+            maxRows    = #{maxRows},
+            maxCols    = #{maxCols},
+            price      = #{price},
+            body       = #{body},
+            updateDate = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateScheduleStatus" parameterType="map">
+        UPDATE `schedule`
+        SET status     = #{status},
+            updateDate = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- Seat grades -->
+    <insert id="insertSeatGrade" parameterType="map"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO seatGrade (regDate, updateDate, scheduleId, name, price)
+        VALUES (NOW(), NOW(), #{scheduleId}, #{name}, #{price})
+    </insert>
+
+    <insert id="insertSeat" parameterType="map">
+        INSERT INTO seat (regDate, updateDate, scheduleId, gradeId, rowName, colNumber, `status`)
+        VALUES (NOW(), NOW(), #{scheduleId}, #{gradeId}, #{row}, #{col}, #{status})
+    </insert>
+
+    <delete id="deleteSeatGradesByScheduleId" parameterType="int">
+        DELETE FROM seatGrade WHERE scheduleId = #{scheduleId}
+    </delete>
+
+    <delete id="deleteSeatsByScheduleId" parameterType="int">
+        DELETE FROM seat WHERE scheduleId = #{scheduleId}
+    </delete>
+
+    <select id="getSeatGradesByScheduleId" resultType="map" parameterType="long">
+        SELECT id, name, price FROM seatGrade WHERE scheduleId = #{scheduleId} ORDER BY id ASC
+    </select>
+
+    <select id="getRemainingSeats" resultType="com.example.demo.vo.Seat">
+        SELECT SG.name AS extra__gradeName,
+               SG.price AS extra__price,
+               COUNT(S.id) AS remainCount
+        FROM seatGrade AS SG
+        LEFT JOIN seat AS S ON SG.id = S.gradeId AND S.`status` = 'AVAILABLE'
+        WHERE SG.scheduleId = #{scheduleId}
+        GROUP BY SG.id
+    </select>
+
+    <select id="getSalesStats" resultType="map">
+        SELECT s.totalSeats                      AS totalSeats,
+               IFNULL(COUNT(r.id), 0)            AS reservedCount,
+               IFNULL(SUM(r.paidPrice), 0)       AS revenue
+        FROM `schedule` s
+        LEFT JOIN reservation r ON s.id = r.scheduleId AND r.status = 'CONFIRMED'
+        WHERE s.id = #{scheduleId}
+        GROUP BY s.id
+    </select>
+
+    <!-- Castings -->
+    <insert id="insertConcertCasting" parameterType="map">
+        INSERT INTO concertCasting (scheduleId, artistId, roleName)
+        VALUES (#{scheduleId}, #{artistId}, #{roleName})
+    </insert>
+
+    <select id="getArtistsByScheduleId" resultType="com.example.demo.vo.Artist">
+        SELECT A.id, A.name, A.profileImg, CC.roleName
+        FROM concertCasting AS CC
+        INNER JOIN artist AS A ON CC.artistId = A.id
+        WHERE CC.scheduleId = #{scheduleId}
+    </select>
+
+    <select id="getAllArtistsByConcertId" resultType="com.example.demo.vo.Artist">
+        SELECT DISTINCT A.id, A.name, A.profileImg, CC.roleName
+        FROM concertCasting CC
+        JOIN artist A ON CC.artistId = A.id
+        WHERE CC.scheduleId IN (SELECT id FROM `schedule` WHERE concertId = #{concertId})
+    </select>
+
+</mapper>

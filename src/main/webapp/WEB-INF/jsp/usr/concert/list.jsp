@@ -39,9 +39,9 @@
 
 					<c:forEach var="concert" items="${concerts}">
 						<a href="../concert/detail?id=${concert.id}"
-							class="group flex flex-col h-full bg-base-100 border border-base-300 rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden">
+							class="group flex flex-col h-full bg-base-100 border border-base-300 rounded-2xl shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 overflow-hidden">
 
-							<div class="relative w-full aspect-[2/3] rounded-t-3xl overflow-hidden flex-shrink-0 bg-base-300">
+							<div class="relative w-full aspect-[2/3] rounded-t-2xl overflow-hidden flex-shrink-0 bg-base-300">
 								<c:choose>
 									<c:when test="${not empty concert.posterImg && concert.posterImg != ''}">
 										<img src="${concert.posterImg}" alt="${concert.title}"
@@ -50,17 +50,30 @@
 									<c:otherwise>
 										<div class="flex flex-col items-center justify-center h-full text-base-content/40">
 											<span class="text-6xl mb-4">🎬</span>
-											<span class="font-bold uppercase tracking-widest">NO POSTER</span>
+											<span class="font-bold uppercase tracking-widest text-xs">NO POSTER</span>
 										</div>
 									</c:otherwise>
 								</c:choose>
+								<c:if test="${concert.status == 'OPEN'}">
+									<div class="absolute top-2 left-2">
+										<span class="badge badge-error badge-sm font-bold text-white text-xs">OPEN</span>
+									</div>
+								</c:if>
 							</div>
 
-							<div class="p-6 flex flex-col flex-grow">
-								<div class="text-primary font-bold text-sm mb-2">${concert.startDate.substring(5, 10).replace("-", ".")}</div>
-								<h3 class="font-black text-xl leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2">
+							<div class="p-4 flex flex-col flex-grow">
+								<div class="text-primary font-bold text-xs mb-1">${concert.startDate.substring(0, 10)}</div>
+								<h3 class="font-black text-base leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2">
 									${concert.title}</h3>
-								<div class="text-sm opacity-60 font-medium mt-auto">일반예매</div>
+								<div class="flex items-center justify-between mt-auto">
+									<c:if test="${concert.extra__avgRating > 0}">
+										<span class="text-amber-400 text-xs font-bold">★ ${concert.extra__avgRating}</span>
+									</c:if>
+									<c:if test="${concert.extra__avgRating == 0}"><span></span></c:if>
+									<span class="text-xs text-base-content/40 flex items-center gap-1">
+										<i class="fas fa-eye text-xs"></i> ${concert.viewCount}
+									</span>
+								</div>
 							</div>
 						</a>
 					</c:forEach>
