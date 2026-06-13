@@ -111,8 +111,7 @@
 		FROM review AS R
 		INNER JOIN `member` AS M ON R.memberId = M.id
 		INNER JOIN concert AS C ON R.concertId = C.id
-		WHERE R.concertId = #{concertId}
-		AND R.`type` = #{type}
+		WHERE R.`type` = #{type}
 		ORDER BY R.id DESC
 	</select>
 </mapper>
