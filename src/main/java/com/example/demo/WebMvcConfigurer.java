@@ -7,6 +7,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import com.example.demo.intercpetor.BeforeActionInterceptor;
 import com.example.demo.intercpetor.NeedLoginInterceptor;
 import com.example.demo.intercpetor.NeedLogoutInterceptor;
+import com.example.demo.intercpetor.NeedAdminInterceptor;
 
 @Configuration
 public class WebMvcConfigurer implements org.springframework.web.servlet.config.annotation.WebMvcConfigurer {
@@ -19,6 +20,9 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
 
 	@Autowired
 	NeedLogoutInterceptor needLogoutInterceptor;
+
+	@Autowired
+	NeedAdminInterceptor needAdminInterceptor;
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
@@ -33,6 +37,9 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
 		registry.addInterceptor(needLogoutInterceptor).addPathPatterns("/usr/member/login")
 				.addPathPatterns("/usr/member/doLogin").addPathPatterns("/usr/member/join")
 				.addPathPatterns("/usr/member/doJoin");
+
+		// Admin-only paths
+		registry.addInterceptor(needAdminInterceptor).addPathPatterns("/admin/**");
 
 	}
 }

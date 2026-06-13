@@ -1,6 +1,7 @@
-<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8" isELIgnored="true"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
+<html>
 <html>
 <head>
 <title>C.A.S.T. - 공연 마스터 관리</title>
@@ -76,7 +77,7 @@ body {
 							<label class="label">
 								<span class="label-text text-slate-400 text-xs">예매 시작일시</span>
 							</label>
-							<input type="text" name="bookingStartAt" placeholder="YYYY-MM-DD HH:mm:ss"
+							<input type="datetime-local" name="bookingStartAt"
 								class="input input-sm input-bordered bg-slate-950 text-center font-mono">
 						</div>
 						<div class="form-control">
@@ -203,27 +204,10 @@ let scheduleCount = 0;
 let inlineArtistIdx = 0;
 let tempArtistFile = null;
 
-function addGradeRow() {
-    $("#grade-list-container").append(`
-        <div class="grade p-3 bg-slate-950 rounded border border-slate-800 flex items-center gap-3 mt-2">
-            <div class="flex-1"><input type="text" name="gradeNames" value="일반석" class="input input-sm input-bordered w-full bg-slate-900 text-sm" oninput="renderLivePreview()"></div>
-            <div class="w-24"><input type="number" name="gradePrices" value="100000" class="input input-sm input-bordered w-full bg-slate-900 text-sm text-center" oninput="calculatePriceRange()"></div>
-            <div class="w-16"><input type="number" name="gradeRowCounts" value="3" class="input input-sm input-bordered w-full text-center font-bold text-emerald-400 bg-slate-900" oninput="renderLivePreview()"></div>
-            <button type="button" class="btn-delete-grade bg-rose-950 text-rose-400 px-2 h-8 rounded text-xs">삭제</button>
-        </div>
-    `);
-    calculatePriceRange();
-    renderLivePreview();
-}
-
-$(document).on('click', '.btn-delete-grade', function() {
-    $(this).closest('.grade').remove();
-    calculatePriceRange();
-    renderLivePreview();
-});
-if(artistPool.length === 0) {
-	artistPool.push({id: "1", name: "박강현", isNew: false});
-	artistPool.push({id: "2", name: "임규형", isNew: false});
+// 초기 더미 아티스트
+if (artistPool.length === 0) {
+    artistPool.push({id: "1", name: "박강현", isNew: false});
+    artistPool.push({id: "2", name: "임규형", isNew: false});
 }
 
 // 1. 프로필 이미지 미리보기
@@ -245,34 +229,55 @@ function previewArtistImage(input) {
 // 2. 출연진 즉시 등록 (풀 업데이트)
 function registerArtistInline() {
     const name = $('#newArtistName').val().trim();
+    const note = $('#newArtistNote').val().trim();
     if(!name) { alert('출연진 이름을 입력하세요.'); return; }
 
     inlineArtistIdx++;
     const tempId = "NEW_" + inlineArtistIdx;
-    
-    artistPool.push({ id: tempId, name: name + " (신규)", isNew: true });
+    artistPool.push({ id: tempId, name: name + " (신규)", isNew: true, note: note });
 
-    if(tempArtistFile) {
+    if (tempArtistFile) {
         const fileInput = document.getElementById('newArtistFile');
-        const clonedInput = fileInput.cloneNode(true);
-        clonedInput.id = "file_" + tempId;
-        clonedInput.name = "artistFiles";
-        $('#hiddenFileContainer').append(clonedInput);
+        fileInput.id = "file_" + tempId;
+        fileInput.name = "artistFiles"; // server expects MultipartFile[] artistFiles
+        $('#hiddenFileContainer').append(fileInput);
+
+        const fresh = document.createElement('input');
+        fresh.type = 'file';
+        fresh.id = 'newArtistFile';
+        fresh.className = 'hidden';
+        fresh.onchange = function() { previewArtistImage(this); };
+        document.getElementById('artistPreviewBox').insertAdjacentElement('afterend', fresh);
+    } else {
+        const placeholder = document.createElement('input');
+        placeholder.type = 'hidden';
+        placeholder.name = 'artistFiles';
+        placeholder.value = '';
+        $('#hiddenFileContainer').append(placeholder);
     }
+
+    $('#hiddenFileContainer').append('<input type="hidden" name="newArtistNames" value="' + escapeHtml(name) + '">');
+    $('#hiddenFileContainer').append('<input type="hidden" name="newArtistNotes" value="' + escapeHtml(note) + '">');
+    $('#hiddenFileContainer').append('<input type="hidden" name="newArtistTempIds" value="' + tempId + '">');
 
     refreshAllCastingSelects();
 
-    $('#newArtistName, #newArtistNote, #newArtistFile').val('');
-    $('#artistPreviewBox').css('background-image', 'none').text('프사 미리보기');
+    $('#newArtistName, #newArtistNote').val('');
+    $('#artistPreviewBox').css('background-image', 'none').text('프사 클릭');
     tempArtistFile = null;
-    alert(`[${name}] 아티스트가 추가되었습니다. 우측 스케줄에서 배역을 매핑하세요!`);
+    alert('[' + name + '] 아티스트가 추가되었습니다. 우측 스케줄에서 배역을 매핑하세요!');
+}
+
+// 안전한 HTML 이스케이프 (간단한 구현)
+function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function refreshAllCastingSelects() {
     $('.casting-artist-select').each(function() {
         const currentVal = $(this).val();
         $(this).empty().append('<option value="">-- 출연진 선택 --</option>');
-        artistPool.forEach(a => $(this).append(`<option value="${a.id}">${a.name}</option>`));
+        artistPool.forEach(a => $(this).append('<option value="' + a.id + '">' + a.name + '</option>'));
         if(currentVal) $(this).val(currentVal);
     });
 }
@@ -282,50 +287,44 @@ function addScheduleTimeline() {
     scheduleCount++;
     const container = $('#schedule-timeline-container');
     
-    // 입력 필드들이 포함된 HTML 구조
-    const card = $(`
-        <div class="schedule-card p-4 bg-slate-900/80 rounded-lg border border-slate-700 shadow-lg mb-4" data-index="${scheduleCount}">
-            <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
-                <span class="text-sm font-bold text-amber-400"># 회차 ${scheduleCount}</span>
-                <button type="button" class="text-slate-500 hover:text-rose-400 text-xs font-bold" onclick="$(this).closest('.schedule-card').remove();">삭제</button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <input type="text" name="schedules[${scheduleCount}].title" placeholder="회차 제목 (예: 1회차 공연)" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500">
-                <input type="datetime-local" name="schedules[${scheduleCount}].performDate" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white">
-                <input type="text" name="schedules[${scheduleCount}].description" placeholder="회차 설명" class="col-span-1 md:col-span-2 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500">
-            </div>
-
-            <div class="bg-slate-950/50 p-2 rounded border border-slate-800">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs text-slate-400 font-medium ml-1">캐스팅 배역 설정</span>
-                    <button type="button" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded" onclick="addCastingRow(this)">+ 배역 추가</button>
-                </div>
-                <div class="schedule-casting-box space-y-1.5"></div>
-            </div>
-        </div>
-    `);
+    var cardHtml = '';
+    cardHtml += '<div class="schedule-card p-4 bg-slate-900/80 rounded-lg border border-slate-700 shadow-lg mb-4" data-index="' + scheduleCount + '">';
+    cardHtml += '<div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">';
+    cardHtml += '<span class="text-sm font-bold text-amber-400"># 회차 ' + scheduleCount + '</span>';
+    cardHtml += '<button type="button" class="text-slate-500 hover:text-rose-400 text-xs font-bold" onclick="$(this).closest(\'.schedule-card\').remove();">삭제</button>';
+    cardHtml += '</div>';
+    cardHtml += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">';
+    cardHtml += '<input type="text" name="schedules[' + scheduleCount + '].title" placeholder="회차 제목 (예: 1회차 공연)" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500 sc-title">';
+    cardHtml += '<input type="datetime-local" name="schedules[' + scheduleCount + '].performDate" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white sc-date">';
+    cardHtml += '<input type="text" name="schedules[' + scheduleCount + '].description" placeholder="회차 설명" class="col-span-1 md:col-span-2 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500 sc-body">';
+    cardHtml += '</div>';
+    cardHtml += '<div class="bg-slate-950/50 p-2 rounded border border-slate-800">';
+    cardHtml += '<div class="flex justify-between items-center mb-2">';
+    cardHtml += '<span class="text-xs text-slate-400 font-medium ml-1">캐스팅 배역 설정</span>';
+    cardHtml += '<button type="button" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded" onclick="addCastingRow(this)">+ 배역 추가</button>';
+    cardHtml += '</div>';
+    cardHtml += '<div class="schedule-casting-box space-y-1.5"></div>';
+    cardHtml += '</div>';
+    cardHtml += '</div>';
+    const card = $(cardHtml);
     
     container.append(card);
-    // 첫 기본 배역 추가
     addCastingRow(card.find('.schedule-casting-box'));
 }
 
 function addCastingRow(element) {
-    // 💡 버튼이 들어왔으면 .schedule-casting-box를 찾고, 컨테이너가 바로 들어왔으면 그대로 사용
     const box = $(element).hasClass('schedule-casting-box') ? $(element) : $(element).closest('.schedule-card').find('.schedule-casting-box');
     
-    const row = $(`
-        <div class="casting-row flex gap-2 items-center bg-slate-900 p-1.5 rounded border border-slate-800">
-            <select class="casting-artist-select bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-white flex-1"></select>
-            <input type="text" class="casting-role-input bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-400 w-32 text-center" placeholder="배역">
-            <button type="button" class="text-slate-500 hover:text-rose-500 text-sm px-1 font-bold" onclick="$(this).parent().remove();">×</button>
-        </div>
-    `);
+    var rowHtml = '';
+    rowHtml += '<div class="casting-row flex gap-2 items-center bg-slate-900 p-1.5 rounded border border-slate-800">';
+    rowHtml += '<select class="casting-artist-select bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-white flex-1"></select>';
+    rowHtml += '<input type="text" class="casting-role-input bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-400 w-32 text-center" placeholder="배역">';
+    rowHtml += '<button type="button" class="text-slate-500 hover:text-rose-500 text-sm px-1 font-bold" onclick="$(this).parent().remove();">×</button>';
+    rowHtml += '</div>';
+    const row = $(rowHtml);
     
-    // 현재 artistPool 데이터를 가져와 옵션 생성
     row.find('.casting-artist-select').append('<option value="">-- 출연진 선택 --</option>');
-    artistPool.forEach(a => row.find('.casting-artist-select').append(`<option value="${a.id}">${a.name}</option>`));
+    artistPool.forEach(a => row.find('.casting-artist-select').append('<option value="' + a.id + '">' + a.name + '</option>'));
     
     box.append(row);
 }
@@ -339,7 +338,7 @@ function prepareSubmit() {
     $('.schedule-card').each(function() {
         const scDate = $(this).find('.sc-date').val().trim();
         const scBody = $(this).find('.sc-body').val().trim();
-        if(!scDate) { alert("일시를 입력해주세요."); isValid = false; return false; }
+        if(!scDate) { alert("일시를 입력해주세요。"); isValid = false; return false; }
         
         const castingsList = [];
         $(this).find('.casting-row').each(function() {
@@ -351,18 +350,19 @@ function prepareSubmit() {
     });
 
     if(!isValid) return false;
-    if(schedulesList.length === 0) { alert("최소 1개의 일정을 등록해야 합니다."); return false; }
+    if(schedulesList.length === 0) { alert("최소 1개의 일정을 등록해야 합니다。"); return false; }
 
     $('#schedulesData').val(JSON.stringify(schedulesList));
     return true;
 }
 
-// 5. 좌석 매트릭스 엔진 (그대로 유지)
+// 5. 좌석 매트릭스 엔진
 function getRowLabel(type, startChar, index) {
     if (type === "NUM") {
-        return (parseInt(startChar) || 1) + index + "";
+        return ((parseInt(startChar) || 1) + index) + "";
     } else {
-        let targetCode = (startChar.trim().toUpperCase().charCodeAt(0) || 65) + index;
+        const base = (startChar && startChar.trim()) ? startChar.trim().toUpperCase().charCodeAt(0) : 65;
+        let targetCode = base + index;
         let label = "";
         while (targetCode >= 65) {
             let remainder = (targetCode - 65) % 26;
@@ -381,32 +381,35 @@ function toggleRow(gradeIdx, r, maxCols) {
 }
 
 function toggleColumn(c) {
-    const gradeElements = $(".grade"); let allBlocked = true;
-    gradeElements.each(function(gradeIdx) {
+    const gradeElements = $(".grade");
+    let allBlocked = true;
+    gradeElements.each(function(idx) {
         const rows = parseInt($(this).find("input[name='gradeRowCounts']").val()) || 0;
-        for(let r=1; r<=rows; r++) { if(!blockedSeats.has(gradeIdx + "_" + r + "_" + c)) allBlocked = false; }
+        for(let r=1; r<=rows; r++) { if(!blockedSeats.has(idx + "_" + r + "_" + c)) allBlocked = false; }
     });
-    gradeElements.each(function(gradeIdx) {
+    gradeElements.each(function(idx) {
         const rows = parseInt($(this).find("input[name='gradeRowCounts']").val()) || 0;
-        for(let r=1; r<=rows; r++) { const id = gradeIdx + "_" + r + "_" + c; if(allBlocked) blockedSeats.delete(id); else blockedSeats.add(id); }
+        for(let r=1; r<=rows; r++) { const id = idx + "_" + r + "_" + c; if(allBlocked) blockedSeats.delete(id); else blockedSeats.add(id); }
     });
     renderLivePreview();
 }
 
+// grade 삭제 핸들러
 $(document).on('click', '.btn-delete-grade', function() {
-    if ($('.grade').length <= 1) { alert("최소 하나의 구역은 있어야 합니다."); return; }
-    $(this).closest('.grade').remove(); renderLivePreview();
+    if ($('.grade').length <= 1) { alert("최소 하나의 구역은 있어야 합니다。"); return; }
+    $(this).closest('.grade').remove(); calculatePriceRange(); renderLivePreview();
 });
 
 function addGradeRow() {
     $("#grade-list-container").append(`
         <div class="grade p-3 bg-slate-950 rounded border border-slate-800 flex items-center gap-3 mt-2">
             <div class="flex-1"><input type="text" name="gradeNames" value="일반석" class="input input-sm input-bordered w-full bg-slate-900 text-sm" oninput="renderLivePreview()"></div>
-            <div class="w-24"><input type="number" name="gradePrices" value="100000" class="input input-sm input-bordered w-full bg-slate-900 text-sm text-center"></div>
+            <div class="w-24"><input type="number" name="gradePrices" value="100000" class="input input-sm input-bordered w-full bg-slate-900 text-sm text-center" oninput="calculatePriceRange()"></div>
             <div class="w-16"><input type="number" name="gradeRowCounts" value="3" class="input input-sm input-bordered w-full text-center font-bold text-emerald-400 bg-slate-900" oninput="renderLivePreview()"></div>
-            <button type="button" class="btn-delete-grade bg-rose-950/40 text-rose-400 border border-rose-900/50 px-2 h-8 rounded text-xs hover:bg-rose-900/60">삭제</button>
+            <button type="button" class="btn-delete-grade bg-rose-950 text-rose-400 px-2 h-8 rounded text-xs">삭제</button>
         </div>
     `);
+    calculatePriceRange();
     renderLivePreview();
 }
 
@@ -422,7 +425,7 @@ function renderLivePreview() {
 
     const colControlRow = $('<div class="flex gap-1 justify-center w-full mb-2 ml-8"></div>');
     for (let c = 1; c <= maxCols; c++) {
-        const colBtn = $(`<div class="w-7 h-5 flex items-center justify-center text-[9px] text-slate-500 bg-slate-800 rounded cursor-pointer hover:bg-slate-700 select-none border border-slate-700">C\${c}</div>`);
+        const colBtn = $('<div class="w-7 h-5 flex items-center justify-center text-[9px] text-slate-500 bg-slate-800 rounded cursor-pointer hover:bg-slate-700 select-none border border-slate-700">' + c + '</div>');
         colBtn.on('click', function() { toggleColumn(c); });
         colControlRow.append(colBtn);
     }
@@ -430,32 +433,34 @@ function renderLivePreview() {
 
     let globalActiveRowIndex = 0;
     gradeElements.each(function(gradeIdx) {
-        const gradeName = $(this).find("input[name='gradeNames']").val() || "구역";
-        const rows = parseInt($(this).find("input[name='gradeRowCounts']").val()) || 0;
+        const $grade = $(this);
+        const gradeName = $grade.find("input[name='gradeNames']").val() || "구역";
+        const rows = parseInt($grade.find("input[name='gradeRowCounts']").val()) || 0;
         const colorClass = colorChips[gradeIdx % colorChips.length];
         if(rows <= 0) return;
 
-        container.append(`<div class="text-[10px] text-slate-500 font-mono font-bold self-start mt-2 mb-1 ml-10">\${gradeName} ZONE</div>`);
+        container.append('<div class="text-[10px] text-slate-500 font-mono font-bold self-start mt-2 mb-1 ml-10">' + gradeName + ' ZONE</div>');
 
         for (let r = 1; r <= rows; r++) {
             let isRowCompletelyBlocked = true;
             for(let c = 1; c <= maxCols; c++) { if(!blockedSeats.has(gradeIdx + "_" + r + "_" + c)) { isRowCompletelyBlocked = false; break; } }
 
             const rowWrapper = $('<div class="flex gap-1 justify-center w-full items-center mb-1"></div>');
-            const rowBtn = $(`<div class="w-8 h-6 flex items-center justify-center text-[9px] text-slate-500 bg-slate-800 rounded cursor-pointer hover:bg-slate-700 select-none mr-2 border border-slate-700">R\${r}</div>`);
+
+            const calculatedRowName = getRowLabel(rowNameType, rowStartChar, globalActiveRowIndex);
+            const rowBtn = $('<div class="w-8 h-6 flex items-center justify-center text-[9px] text-slate-500 bg-slate-800 rounded cursor-pointer hover:bg-slate-700 select-none mr-2 border border-slate-700">' + calculatedRowName + '</div>');
             rowBtn.on('click', function() { toggleRow(gradeIdx, r, maxCols); });
             rowWrapper.append(rowBtn);
 
-            const calculatedRowName = getRowLabel(rowNameType, rowStartChar, globalActiveRowIndex);
-            let displayCol = 1; 
+            let displayCol = 1;
 
             for (let c = 1; c <= maxCols; c++) {
                 const seatId = gradeIdx + "_" + r + "_" + c;
                 const isBlocked = blockedSeats.has(seatId);
-                let seatClass = isBlocked ? 'seat-blocked' : `${colorClass} seat-block`;
+                let seatClass = isBlocked ? 'seat-blocked' : (colorClass + ' seat-block');
                 let seatText = isBlocked ? '' : calculatedRowName + displayCol++;
 
-                const seatBtn = $(`<div class="w-7 h-6 flex items-center justify-center text-[9px] font-bold rounded border cursor-pointer select-none \${seatClass}">\${seatText}</div>`);
+                const seatBtn = $('<div class="w-7 h-6 flex items-center justify-center text-[9px] font-bold rounded border cursor-pointer select-none ' + seatClass + '">' + seatText + '</div>');
                 seatBtn.on('click', function() {
                     if (blockedSeats.has(seatId)) blockedSeats.delete(seatId); else blockedSeats.add(seatId);
                     renderLivePreview(); 
@@ -467,14 +472,13 @@ function renderLivePreview() {
         }
     });
 }
-// ... (여기에 기존 renderLivePreview, getRowLabel, addScheduleTimeline, prepareSubmit 등 모든 JS 로직 통합) ...
-// (참고: 위에서 사용한 registerArtistInline, refreshAllCastingSelects, toggleRow 등 모든 함수를 여기에 배치하시면 됩니다.)
 
 $(document).ready(function() {
     addScheduleTimeline();
     renderLivePreview();
     calculatePriceRange(); 
 });
-</script>
+    </script>
 </body>
+</html>
 </html>

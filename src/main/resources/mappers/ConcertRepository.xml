@@ -46,8 +46,10 @@
 		SG.price AS extra__price,
 		COUNT(S.id) AS remainCount
 		FROM seatGrade AS SG
-		LEFT JOIN seat AS S ON SG.id = S.gradeId AND S.`status` = 'AVAILABLE'
-		WHERE SG.concertId = #{concertId}
+		LEFT JOIN seat AS S ON
+		SG.id = S.gradeId AND S.`status` = 'AVAILABLE'
+		WHERE SG.concertId =
+		#{concertId}
 		GROUP BY SG.id
 	</select>
 
@@ -66,23 +68,103 @@
 	<!-- Admin inserts -->
 	<insert id="insertConcert" parameterType="map">
 		INSERT INTO concert
-		(title, posterImg, performDate, startAt, totalSeats, maxRows, maxCols, price, parentId, bookingStartAt, body, regDate, updateDate)
+		(title, posterImg, performDate, startDate, endDate, startAt, totalSeats,
+		maxRows, maxCols, price, parentId, bookingStartAt, body, regDate,
+		updateDate)
 		VALUES
-		(#{title}, #{posterImg}, #{performDate}, #{startAt}, #{totalSeats}, #{maxRows}, #{maxCols}, #{price}, #{parentId}, #{bookingStartAt}, #{body}, NOW(), NOW())
+		(#{title}, #{posterImg}, #{performDate}, #{startDate}, #{endDate}, #{startAt},
+		#{totalSeats}, #{maxRows}, #{maxCols}, #{price}, #{parentId},
+		#{bookingStartAt}, #{body}, NOW(), NOW())
 	</insert>
 
-	<select id="getLastInsertId" parameterType="int">
+	<select id="getSalesStats" resultType="map">
+		SELECT
+		c.totalSeats AS
+		totalSeats,
+		IFNULL(COUNT(r.id), 0) AS reservedCount,
+		IFNULL(SUM(r.paidPrice), 0) AS revenue
+		FROM concert c
+		LEFT JOIN
+		reservation r ON c.id =
+		r.concertId AND r.status = 'CONFIRMED'
+		WHERE
+		c.id = #{concertId}
+		GROUP
+		BY c.id
+	</select>
+
+	<select id="getLastInsertId" resultType="int">
 		SELECT LAST_INSERT_ID();
 	</select>
 
 	<insert id="insertSeatGrade" parameterType="map">
-		INSERT INTO seatGrade (concertId, name, price)
-		VALUES (#{concertId}, #{name}, #{price})
+		INSERT INTO seatGrade
+		(regDate, updateDate, concertId, name, price)
+		VALUES (NOW(), NOW(),
+		#{concertId}, #{name}, #{price})
 	</insert>
 
+	<update id="updateConcert" parameterType="map">
+		UPDATE concert
+		SET title
+		= #{title},
+		posterImg = #{posterImg},
+		performDate = #{performDate},
+		startAt = #{startAt},
+		totalSeats = #{totalSeats},
+		maxRows = #{maxRows},
+		maxCols = #{maxCols},
+		price = #{price},
+		bookingStartAt =
+		#{bookingStartAt},
+		body = #{body},
+		updateDate = NOW()
+		WHERE id = #{id}
+	</update>
+
+	<update id="updateConcertStatus" parameterType="map">
+		UPDATE concert
+		SET `status` = #{status},
+		updateDate = NOW()
+		WHERE id = #{id}
+	</update>
+
+	<delete id="deleteSeatGradesByConcertId" parameterType="int">
+		DELETE
+		FROM seatGrade WHERE concertId = #{concertId}
+	</delete>
+
+	<select id="getSeatGradesByConcertId" resultType="map"
+		parameterType="long">
+		SELECT id, name, price FROM seatGrade WHERE concertId =
+		#{concertId} ORDER BY id ASC
+	</select>
+
+	<delete id="deleteSeatsByConcertId" parameterType="int">
+		DELETE FROM
+		seat WHERE concertId = #{concertId}
+	</delete>
+
 	<insert id="insertSeat" parameterType="map">
-		INSERT INTO seat (concertId, gradeId, `row`, `col`, `status`)
-		VALUES (#{concertId}, #{gradeId}, #{row}, #{col}, #{status})
+		INSERT INTO seat (regDate,
+		updateDate, concertId, gradeId, rowName, colNumber, `status`)
+		VALUES
+		(NOW(), NOW(), #{concertId}, #{gradeId}, #{row}, #{col}, #{status})
+	</insert>
+
+	<!-- insert artist -->
+	<insert id="insertArtist" parameterType="map">
+		INSERT INTO artist
+		(`name`, profileImg)
+		VALUES (#{name}, #{profileImg})
+	</insert>
+
+	<!-- insert casting mapping -->
+	<insert id="insertConcertCasting" parameterType="map">
+		INSERT INTO
+		concertCasting (concertId, artistId, roleName)
+		VALUES (#{concertId},
+		#{artistId}, #{roleName})
 	</insert>
 
 </mapper>

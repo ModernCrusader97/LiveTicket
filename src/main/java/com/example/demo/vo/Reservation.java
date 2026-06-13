@@ -14,7 +14,7 @@ public class Reservation {
 
 	private long id;
 	private long concertId;
-	private long seatIds;
+    // removed redundant seatIds field
     private String regDate;
     private String updateDate;
     private long memberId;

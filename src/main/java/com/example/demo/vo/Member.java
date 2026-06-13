@@ -15,6 +15,7 @@ public class Member {
 	private int id;
 	private LocalDateTime regDate;
 	private LocalDateTime uodateDate;
+	private int authLevel;
 	private String loginId;
 	private String loginPw;
 	private String name;

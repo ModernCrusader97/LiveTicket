@@ -54,4 +54,12 @@ public class ConcertService {
 		return concertRepository.getAllArtistsByMasterId(masterId);
 
 	}
+
+	public Map<String, Object> getSalesStats(long concertId) {
+		return concertRepository.getSalesStats(concertId);
+	}
+
+	public List<Map<String, Object>> getSeatGradesByConcertId(long concertId) {
+		return concertRepository.getSeatGradesByConcertId(concertId);
+	}
 }

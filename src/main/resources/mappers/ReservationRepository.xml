@@ -165,4 +165,8 @@
 		WHERE id = #{id}
 		AND `memberId` = #{memberId}
 	</update>
+
+	<select id="countConfirmedByConcertId" resultType="int" parameterType="long">
+		SELECT COUNT(*) FROM reservation WHERE concertId = #{concertId} AND `status` = 'CONFIRMED'
+	</select>
 </mapper>

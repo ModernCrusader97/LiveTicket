@@ -41,4 +41,6 @@ public interface ReservationRepository {
 	int releaseSeatAfterCancel(@Param("seatId") long seatId);
 
 	int cancelReservation(@Param("id") int id, @Param("memberId") int memberId);
+
+	int countConfirmedByConcertId(@Param("concertId") long concertId);
 }

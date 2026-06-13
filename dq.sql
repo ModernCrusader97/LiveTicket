@@ -72,17 +72,17 @@ CREATE TABLE concert (
 
     id INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
 
-    performDate DATETIME NOT NULL,
+    performDate DATETIME,
 
-    startDate DATETIME NOT NULL,
+    startDate DATETIME,
 
-    endDate DATETIME NOT NULL,
+    endDate DATETIME,
 
     title VARCHAR(100) NOT NULL,
 
     `body` TEXT,
 
-    startAt DATETIME NOT NULL,
+    startAt DATETIME ,
 
     bookingStartAt DATETIME NOT NULL,
 
@@ -102,7 +102,11 @@ ALTER TABLE concert ADD COLUMN parentId INT(10) UNSIGNED DEFAULT 0 AFTER id;
 
 ALTER TABLE concert ADD COLUMN posterImg VARCHAR(255) DEFAULT NULL AFTER title;
 
+ALTER TABLE concert ADD COLUMN `status` VARCHAR(20) NOT NULL DEFAULT 'DRAFT' COMMENT '공연 상태 (DRAFT/OPEN/PAUSED/CLOSED)' AFTER posterImg;
 
+ALTER TABLE concert ADD COLUMN `price` INT DEFAULT 0 AFTER maxCols;
+ALTER TABLE concert ADD COLUMN regDate DATETIME NOT NULL AFTER id;
+ALTER TABLE concert ADD COLUMN updateDate DATETIME NOT NULL AFTER regDate;
 
 # 4. 좌석 등급
 
@@ -177,6 +181,7 @@ CREATE TABLE reservation (
 );
 
 # 아티스트 정보
+
 
 CREATE TABLE artist (
 
@@ -382,7 +387,7 @@ INSERT INTO reservation (id, regDate, updateDate, memberId, concertId, seatId, p
 
 (100, NOW(), NOW(), 2, 3, 1, 160000, 'CONFIRMED');
 
-UPDATE seat SET `status` = 'SOLD', memberId = 2 WHERE id = 1;
+UPDATE seat SET `status` = 'RESERVED', memberId = 2 WHERE id = 1;
 
 
 
@@ -416,7 +421,7 @@ INSERT INTO review (regDate, updateDate, memberId, concertId, title, `body`, rat
 UPDATE concert
 SET reviewCount = reviewCount + 1,
 totalRating = totalRating + 5
-WHERE id = 3
+WHERE id = 3;
 
 
 INSERT INTO seatGrade (regDate, updateDate, concertId, `name`, price) VALUES (NOW(), NOW(), 6, 'VIP', 160000), (NOW(), NOW(), 6, 'R', 130000);
@@ -505,9 +510,10 @@ INSERT INTO seat (regDate, updateDate, concertId, gradeId, rowName, colNumber, `
 
 
 
+
 # 예매 취소 내역 롤백 (에반핸슨 1회차 A-1 예약 연동 복구)
 
-UPDATE seat SET `status` = 'SOLD', memberId = 2 WHERE id = 1;
+UPDATE seat SET `status` = 'RESERVED', memberId = 2 WHERE id = 1;
 
     
 

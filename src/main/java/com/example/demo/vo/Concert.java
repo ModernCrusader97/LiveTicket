@@ -23,6 +23,7 @@ public class Concert {
     private int totalSeats;
     private int maxRows;
     private int maxCols;
+    private int price;
     private String body;
     private int rating;
     private int reviewCount;
@@ -30,5 +31,7 @@ public class Concert {
 	private String posterImg;
 
 	private double extra__avgRating;
+
+    private String status; // DRAFT, OPEN, PAUSED, CLOSED
 
 }
