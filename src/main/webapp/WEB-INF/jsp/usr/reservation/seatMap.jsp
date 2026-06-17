@@ -26,8 +26,14 @@
 }
 
 .seat-btn.AVAILABLE:hover {
-	background-color: #22c55e !important;
 	color: white !important;
+}
+
+.seat-btn.BLOCKED {
+	background-color: transparent !important;
+	border: 1px dashed #374151 !important;
+	color: #374151 !important;
+	cursor: not-allowed !important;
 }
 
 /* 임시 점유 상태 */
@@ -80,59 +86,107 @@
 	<div class="w-full bg-slate-700 text-slate-400 text-center py-2 rounded-md mb-16 font-bold tracking-[1em]">STAGE</div>
 
 	<div class="seating-area flex flex-col items-center">
-		<c:forEach var="rowEntry" items="${groupedSeats}">
-			<div class="seat-row">
-				<span class="row-label">${rowEntry.key}</span>
-
-				<c:forEach var="seat" items="${rowEntry.value}" varStatus="status">
-					<c:set var="isAvailable" value="${seat.status == 'AVAILABLE'}" />
-					<c:set var="isMine" value="${seat.status == 'PENDING' && seat.memberId == loginedMemberId}" />
-					<c:choose>
-						<c:when test="${isAvailable || isMine}">
-							<button type="button" id="seat-${seat.id}"
-							    class="seat-btn ${isMine ? 'SELECTED' : 'AVAILABLE'}"
-								data-id="${seat.id}" data-version="${seat.version}"
-								data-row="${seat.rowName}" data-col="${seat.colNumber}"
-								data-grade="${seat.extra__gradeName}" data-price="${seat.extra__price}"
-								onclick="toggleSeat(this, ${seat.id}, '${seat.rowName}', ${seat.colNumber}, '${seat.extra__gradeName}', ${seat.extra__price}, ${seat.version})">
-								${seat.colNumber}</button>
-						</c:when>
-						<c:otherwise>
-							<%-- 점유 또는 예약된 좌석 (disabled 처리) --%>
-							<button type="button" class="seat-btn ${seat.status}" disabled>${seat.status == 'RESERVED' ? 'X' : '...'}
-							</button>
-						</c:otherwise>
-					</c:choose>
-
-					<%-- 통로 구현 --%>
-					<c:if test="${seat.colNumber == 5 || seat.colNumber == 10}">
-						<div class="aisle"></div>
-					</c:if>
-				</c:forEach>
+		<c:forEach var="zone" items="${seatZones}" varStatus="zoneStatus">
+			<div class="text-[10px] text-slate-500 font-mono font-bold self-start mt-3 mb-1" style="margin-left:46px">
+				${zone.gradeName} ZONE
 			</div>
+			<c:forEach var="rowEntry" items="${zone.rows}">
+				<div class="seat-row">
+					<span class="row-label">${rowEntry.key}</span>
+
+					<c:forEach var="seat" items="${rowEntry.value}" varStatus="colStatus">
+						<c:set var="isAvailable" value="${seat.status == 'AVAILABLE'}" />
+						<c:set var="isMine" value="${seat.status == 'PENDING' && seat.memberId == loginedMemberId}" />
+						<c:choose>
+							<c:when test="${isAvailable || isMine}">
+								<button type="button" id="seat-${seat.id}"
+								    class="seat-btn ${isMine ? 'SELECTED' : 'AVAILABLE'}"
+									data-id="${seat.id}" data-version="${seat.version}"
+									data-row="${seat.rowName}" data-col="${seat.colNumber}"
+									data-grade="${seat.extra__gradeName}" data-price="${seat.extra__price}"
+									onclick="toggleSeat(this, ${seat.id}, '${seat.rowName}', ${seat.colNumber}, '${seat.extra__gradeName}', ${seat.extra__price}, ${seat.version})">
+									${seat.colNumber}</button>
+							</c:when>
+							<c:otherwise>
+								<button type="button" class="seat-btn ${seat.status}" disabled>
+									<c:choose>
+										<c:when test="${seat.status == 'RESERVED'}">✕</c:when>
+										<c:when test="${seat.status == 'BLOCKED'}"></c:when>
+										<c:otherwise>⏳</c:otherwise>
+									</c:choose>
+								</button>
+							</c:otherwise>
+						</c:choose>
+
+						<%-- 통로 구현 --%>
+						<c:if test="${seat.colNumber == 5 || seat.colNumber == 10}">
+							<div class="aisle"></div>
+						</c:if>
+					</c:forEach>
+				</div>
+			</c:forEach>
+			<c:if test="${!zoneStatus.last}">
+				<div class="w-full my-2" style="border-top: 1px solid rgba(71,85,105,0.4);"></div>
+			</c:if>
 		</c:forEach>
 	</div>
 
 </div>
 
-<div class="flex justify-center gap-6 mt-12 text-sm">
-	<div class="flex items-center gap-2">
-		<span class="w-4 h-4 rounded bg-success"></span>
-		선택 가능
-	</div>
-	<div class="flex items-center gap-2">
-		<span class="w-4 h-4 rounded bg-primary"></span>
-		내가 선택
-	</div>
-	<div class="flex items-center gap-2">
-		<span class="w-4 h-4 rounded bg-yellow-500"></span>
-		임시 점유
-	</div>
-	<div class="flex items-center gap-2">
-		<span class="w-4 h-4 rounded bg-gray-600"></span>
-		판매 완료
-	</div>
+<div class="flex flex-wrap justify-center gap-4 mt-10 text-xs" id="grade-legend"></div>
+<div class="flex flex-wrap justify-center gap-5 mt-4 text-xs text-slate-400">
+	<div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-primary"></span>내가 선택</div>
+	<div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-500"></span>임시 점유</div>
+	<div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-gray-600"></span>판매 완료</div>
 </div>
+
+<script>
+(function() {
+    const GRADE_PALETTES = [
+        { border:'#22d3ee', text:'#22d3ee', hover:'rgba(34,211,238,0.85)' },
+        { border:'#a855f7', text:'#a855f7', hover:'rgba(168,85,247,0.85)' },
+        { border:'#f59e0b', text:'#f59e0b', hover:'rgba(245,158,11,0.85)' },
+        { border:'#f87171', text:'#f87171', hover:'rgba(248,113,113,0.85)' },
+        { border:'#34d399', text:'#34d399', hover:'rgba(52,211,153,0.85)'  },
+    ];
+
+    const grades = [];
+    document.querySelectorAll('.seat-btn[data-grade]').forEach(btn => {
+        const g = btn.dataset.grade;
+        if (g && !grades.includes(g)) grades.push(g);
+    });
+
+    document.querySelectorAll('.seat-btn.AVAILABLE, .seat-btn.SELECTED').forEach(btn => {
+        const idx = grades.indexOf(btn.dataset.grade);
+        if (idx < 0) return;
+        const p = GRADE_PALETTES[idx % GRADE_PALETTES.length];
+        btn.style.borderColor = p.border;
+        btn.style.color = p.text;
+        btn.dataset.hoverColor = p.hover;
+        btn.addEventListener('mouseenter', function() {
+            if (this.classList.contains('AVAILABLE')) {
+                this.style.backgroundColor = p.hover;
+                this.style.color = '#fff';
+            }
+        });
+        btn.addEventListener('mouseleave', function() {
+            if (this.classList.contains('AVAILABLE') && !this.classList.contains('SELECTED')) {
+                this.style.backgroundColor = 'transparent';
+                this.style.color = p.text;
+            }
+        });
+    });
+
+    const legend = document.getElementById('grade-legend');
+    grades.forEach((g, idx) => {
+        const p = GRADE_PALETTES[idx % GRADE_PALETTES.length];
+        legend.innerHTML += `<div class="flex items-center gap-1.5">
+            <span class="w-3.5 h-3.5 rounded border" style="border-color:${p.border};background:transparent"></span>
+            <span style="color:${p.text}">${g}</span>
+        </div>`;
+    });
+})();
+</script>
 </div>
 
 <div class="w-full lg:w-96">

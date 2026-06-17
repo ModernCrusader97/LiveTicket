@@ -9,29 +9,38 @@
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO `schedule`
         (concertId, title, performDate, startAt, totalSeats, maxRows, maxCols,
-         price, body, status, regDate, updateDate)
+         body, status, regDate, updateDate)
         VALUES
         (#{concertId}, #{title}, #{performDate}, #{startAt}, #{totalSeats},
-         #{maxRows}, #{maxCols}, #{price}, #{body}, IFNULL(#{status}, 'DRAFT'),
+         #{maxRows}, #{maxCols}, #{body}, IFNULL(#{status}, 'DRAFT'),
          NOW(), NOW())
     </insert>
 
     <select id="getScheduleById" resultType="com.example.demo.vo.Schedule">
         SELECT s.*,
-               c.title        AS extra__concertTitle,
-               c.posterImg    AS extra__posterImg,
+               c.title          AS extra__concertTitle,
+               c.posterImg      AS extra__posterImg,
                c.bookingStartAt AS extra__bookingStartAt,
-               c.startDate    AS extra__concertStartDate,
-               c.endDate      AS extra__concertEndDate
+               c.startDate      AS extra__concertStartDate,
+               c.endDate        AS extra__concertEndDate,
+               IFNULL(MIN(sg.price), 0) AS extra__minPrice,
+               IFNULL(MAX(sg.price), 0) AS extra__maxPrice
         FROM `schedule` s
         INNER JOIN concert c ON s.concertId = c.id
+        LEFT JOIN seatGrade sg ON sg.scheduleId = s.id
         WHERE s.id = #{id}
+        GROUP BY s.id
     </select>
 
     <select id="getSchedulesByConcertId" resultType="com.example.demo.vo.Schedule">
-        SELECT * FROM `schedule`
-        WHERE concertId = #{concertId}
-        ORDER BY performDate ASC
+        SELECT s.*,
+               IFNULL(MIN(sg.price), 0) AS extra__minPrice,
+               IFNULL(MAX(sg.price), 0) AS extra__maxPrice
+        FROM `schedule` s
+        LEFT JOIN seatGrade sg ON sg.scheduleId = s.id
+        WHERE s.concertId = #{concertId}
+        GROUP BY s.id
+        ORDER BY s.performDate ASC
     </select>
 
     <update id="updateSchedule" parameterType="com.example.demo.vo.Schedule">
@@ -42,7 +51,6 @@
             totalSeats = #{totalSeats},
             maxRows    = #{maxRows},
             maxCols    = #{maxCols},
-            price      = #{price},
             body       = #{body},
             updateDate = NOW()
         WHERE id = #{id}

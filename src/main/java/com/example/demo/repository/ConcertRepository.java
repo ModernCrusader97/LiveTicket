@@ -30,6 +30,11 @@ public interface ConcertRepository {
 
     void incrementViewCount(long id);
 
+    void autoOpenConcerts();
+
+    void autoCloseConcerts();
+
     // Artist management (global, not schedule-specific)
     void insertArtist(Artist artist);
+    List<Artist> getAllArtists();
 }

@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" isELIgnored="false"%>
-<c:set var="pageTitle" value="등록 완료" scope="request"/>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<c:set var="pageTitle" value="등록 완료" scope="request"/>
 <%@ include file="../common/head.jspf"%>
 
 <div class="max-w-lg mx-auto text-center py-16">

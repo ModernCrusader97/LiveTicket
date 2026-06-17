@@ -23,7 +23,7 @@
   <%-- 메인 행: 로고 + 로그인/아웃 --%>
   <div class="max-w-screen-xl mx-auto px-4 h-14 flex items-center gap-4">
     <a href="/" class="shrink-0 flex items-center hover:opacity-80 transition-opacity">
-      <img src="<c:url value='/img/LOGO.png' />" alt="CAST" class="h-9 w-auto neon-logo" />
+      <img src="<c:url value='/img/LOGO.png' />" alt="CAST" class="h-14 w-auto neon-logo" />
     </a>
     <div class="flex-1"></div>
     <div class="flex items-center gap-2">

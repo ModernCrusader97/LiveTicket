@@ -345,7 +345,12 @@ $(document).on("click", ".btn-schedule", function() {
         });
         $("#seat-info-container").html(html);
         
-        let castHtml = '<div class="text-xs mt-2 p-2 bg-base-200 rounded-lg">Cast: ' + data.artists.map(a => a.name).join(", ") + '</div>';
+        let castHtml = '';
+        if (data.artists && data.artists.length > 0) {
+            castHtml = '<div class="text-xs mt-2 p-2 bg-base-200 rounded-lg space-y-0.5">' +
+                data.artists.map(a => '<span class="inline-block mr-2 text-white">' + a.name + (a.roleName ? '<span class="text-slate-400">(' + a.roleName + ')</span>' : '') + '</span>').join('') +
+                '</div>';
+        }
         $("#mini-casting-container").html(castHtml);
         
         $("#selected-schedule-id").val(id);

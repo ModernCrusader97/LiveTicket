@@ -125,7 +125,13 @@
                 <td class="font-medium text-white">${s.title}</td>
                 <td class="font-mono text-slate-300">${s.performDate}</td>
                 <td class="text-center text-slate-300">${s.totalSeats}</td>
-                <td class="text-center text-slate-300"><c:if test="${s.price > 0}">${s.price}원</c:if><c:if test="${s.price == 0}">-</c:if></td>
+                <td class="text-center text-slate-300">
+                  <c:choose>
+                    <c:when test="${s.extra__minPrice > 0 && s.extra__minPrice == s.extra__maxPrice}">${s.extra__minPrice}원</c:when>
+                    <c:when test="${s.extra__minPrice > 0}">${s.extra__minPrice}원~${s.extra__maxPrice}원</c:when>
+                    <c:otherwise>-</c:otherwise>
+                  </c:choose>
+                </td>
                 <td class="text-center">
                   <c:choose>
                     <c:when test="${s.status == 'OPEN'}"><span class="badge badge-success badge-sm">OPEN</span></c:when>

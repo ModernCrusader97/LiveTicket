@@ -68,6 +68,22 @@
         WHERE id = #{id}
     </update>
 
+    <update id="autoOpenConcerts">
+        UPDATE concert
+        SET `status` = 'OPEN', updateDate = NOW()
+        WHERE `status` = 'DRAFT'
+          AND bookingStartAt IS NOT NULL
+          AND bookingStartAt &lt;= NOW()
+          AND endDate &gt;= CURDATE()
+    </update>
+
+    <update id="autoCloseConcerts">
+        UPDATE concert
+        SET `status` = 'CLOSED', updateDate = NOW()
+        WHERE `status` IN ('OPEN', 'PAUSED')
+          AND endDate &lt; CURDATE()
+    </update>
+
     <select id="getSalesStatsByConcertId" resultType="map">
         SELECT IFNULL(SUM(s.totalSeats), 0)   AS totalSeats,
                IFNULL(COUNT(r.id), 0)          AS reservedCount,
@@ -86,5 +102,9 @@
         INSERT INTO artist (`name`, profileImg)
         VALUES (#{name}, #{profileImg})
     </insert>
+
+    <select id="getAllArtists" resultType="com.example.demo.vo.Artist">
+        SELECT id, name, profileImg FROM artist ORDER BY id ASC
+    </select>
 
 </mapper>

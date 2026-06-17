@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" isELIgnored="true"%>
+<%@ page contentType="text/html; charset=UTF-8" isELIgnored="false"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
 <html>
@@ -97,8 +97,9 @@ body {
 						</div>
 					</div>
 
-					<input type="file" name="posterFile"
+					<input type="file" id="posterFile" name="posterFile" accept="image/*"
 						class="file-input file-input-sm file-input-bordered file-input-primary bg-slate-950 w-full" required>
+					<div id="posterSizeHint" class="text-xs text-slate-500 mt-1 hidden">이미지 자동 압축 중...</div>
 
 					<div class="divider border-slate-800/60 my-1">좌석 구조 및 등급</div>
 
@@ -211,11 +212,14 @@ let scheduleCount = 0;
 let inlineArtistIdx = 0;
 let tempArtistFile = null;
 
-// 초기 더미 아티스트
-if (artistPool.length === 0) {
-    artistPool.push({id: "1", name: "박강현", isNew: false});
-    artistPool.push({id: "2", name: "임규형", isNew: false});
-}
+// DB에서 로드한 아티스트 목록
+<c:forEach var="a" items="${allArtists}">
+artistPool.push({id: "${a.id}", name: "${a.name}", isNew: false});
+</c:forEach>
+<c:if test="${empty allArtists}">
+artistPool.push({id: "1", name: "박강현", isNew: false});
+artistPool.push({id: "2", name: "임규형", isNew: false});
+</c:if>
 
 // 1. 프로필 이미지 미리보기
 function previewArtistImage(input) {
@@ -337,16 +341,13 @@ function addCastingRow(element) {
 }
 
 // 4. 전송 패키징
-function prepareSubmit() {
-    $('#disabledSeatsStr').val(Array.from(blockedSeats).join(','));
+function buildSchedulesList() {
     const schedulesList = [];
     let isValid = true;
-
     $('.schedule-card').each(function() {
         const scDate = $(this).find('.sc-date').val().trim();
         const scBody = $(this).find('.sc-body').val().trim();
         if(!scDate) { alert("일시를 입력해주세요。"); isValid = false; return false; }
-        
         const castingsList = [];
         $(this).find('.casting-row').each(function() {
             const artistId = $(this).find('.casting-artist-select').val();
@@ -356,11 +357,56 @@ function prepareSubmit() {
         const scTitle = $(this).find('.sc-title').val().trim();
         schedulesList.push({ title: scTitle, performDate: scDate, body: scBody, castings: castingsList });
     });
+    return isValid ? schedulesList : null;
+}
 
-    if(!isValid) return false;
+function compressImage(file, maxWidthPx, qualityJpeg) {
+    return new Promise(function(resolve) {
+        if (!file || !file.type.startsWith('image/')) { resolve(file); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const ratio = Math.min(1, maxWidthPx / img.width, maxWidthPx / img.height);
+                const canvas = document.createElement('canvas');
+                canvas.width  = Math.round(img.width  * ratio);
+                canvas.height = Math.round(img.height * ratio);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(function(blob) {
+                    const compressed = new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
+                    resolve(compressed);
+                }, 'image/jpeg', qualityJpeg);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function prepareSubmit() {
+    $('#disabledSeatsStr').val(Array.from(blockedSeats).join(','));
+    const schedulesList = buildSchedulesList();
+    if(!schedulesList) return false;
     if(schedulesList.length === 0) { alert("최소 1개의 일정을 등록해야 합니다。"); return false; }
-
     $('#schedulesData').val(JSON.stringify(schedulesList));
+
+    const posterInput = document.getElementById('posterFile');
+    if (posterInput && posterInput.files && posterInput.files[0]) {
+        const file = posterInput.files[0];
+        if (file.size > 800 * 1024) {
+            $('#posterSizeHint').text('이미지 압축 중...').removeClass('hidden');
+            compressImage(file, 1200, 0.82).then(function(compressed) {
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(compressed);
+                    posterInput.files = dt.files;
+                } catch(e) {}
+                $('#posterSizeHint').addClass('hidden');
+                document.getElementById('concertForm').submit();
+            });
+            return false;
+        }
+    }
     return true;
 }
 

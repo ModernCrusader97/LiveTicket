@@ -8,23 +8,34 @@
 <%-- Hero --%>
 <section class="relative overflow-hidden bg-gradient-to-br from-base-100 via-base-200 to-base-100 border-b border-base-300">
   <div class="absolute inset-0 opacity-10"
-       style="background-image:radial-gradient(circle at 30% 50%, oklch(var(--p)) 0%, transparent 60%), radial-gradient(circle at 80% 20%, oklch(var(--s)) 0%, transparent 50%);"></div>
-  <div class="relative max-w-screen-xl mx-auto px-4 py-20 sm:py-28 flex flex-col items-center text-center gap-6">
-    <p class="font-mono font-black text-5xl sm:text-7xl tracking-widest text-base-content">C.A.S.T.</p>
-    <div class="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm sm:text-base font-mono text-base-content/40">
-      <span><span class="text-primary font-black">C</span>oncurrent — <span class="text-base-content/60">동시에 몰려도</span></span>
-      <span><span class="text-secondary font-black">A</span>nd — <span class="text-base-content/60">언제나</span></span>
-      <span><span class="text-accent font-black">S</span>ecure — <span class="text-base-content/60">안전하게</span></span>
-      <span><span class="text-warning font-black">T</span>icketing — <span class="text-base-content/60">내 자리를</span></span>
+       style="background-image:radial-gradient(circle at 25% 50%, oklch(var(--p)) 0%, transparent 55%), radial-gradient(circle at 80% 30%, oklch(var(--s)) 0%, transparent 50%);"></div>
+  <div class="relative max-w-screen-xl mx-auto px-6 py-16 sm:py-24 flex flex-col sm:flex-row items-center gap-10 sm:gap-16">
+
+    <%-- 왼쪽: 로고 --%>
+    <div class="shrink-0 flex justify-center sm:justify-start">
+      <img src="/img/logo_blue.png" alt="C.A.S.T."
+           class="w-64 h-64 sm:w-80 sm:h-80 object-contain"
+           style="filter: drop-shadow(0 0 36px rgba(99,179,237,0.7));" />
     </div>
-    <p class="text-base-content/50 text-base sm:text-lg max-w-lg text-center">
-      수만 명이 동시에 접속해도, 내 자리는 공정하게 확보됩니다.<br class="hidden sm:block"/>
-      빠르고 안전한 티켓팅, C.A.S.T.가 함께합니다.
-    </p>
-    <div class="flex gap-3 mt-2">
-      <a href="/usr/concert/list" class="btn btn-primary btn-lg rounded-xl px-8 font-black">공연 목록 보기</a>
-      <a href="/usr/review/list" class="btn btn-ghost btn-lg rounded-xl font-semibold">커뮤니티</a>
+
+    <%-- 오른쪽: 텍스트 --%>
+    <div class="flex flex-col gap-5 text-center sm:text-left">
+      <div class="space-y-2 font-mono text-lg sm:text-xl">
+        <p><span class="text-primary font-black text-2xl sm:text-3xl">C</span><span class="text-base-content/50">oncurrent</span> <span class="text-base-content/30 mx-1">—</span> <span class="text-base-content/80 font-semibold">동시에 몰려도</span></p>
+        <p><span class="text-secondary font-black text-2xl sm:text-3xl">A</span><span class="text-base-content/50">nd</span> <span class="text-base-content/30 mx-1">—</span> <span class="text-base-content/80 font-semibold">언제나</span></p>
+        <p><span class="text-accent font-black text-2xl sm:text-3xl">S</span><span class="text-base-content/50">ecure</span> <span class="text-base-content/30 mx-1">—</span> <span class="text-base-content/80 font-semibold">안전하게</span></p>
+        <p><span class="text-warning font-black text-2xl sm:text-3xl">T</span><span class="text-base-content/50">icketing</span> <span class="text-base-content/30 mx-1">—</span> <span class="text-base-content/80 font-semibold">내 자리를</span></p>
+      </div>
+      <p class="text-base-content/40 text-sm sm:text-base max-w-md">
+        수만 명이 동시에 접속해도, 내 자리는 공정하게 확보됩니다.<br/>
+        빠르고 안전한 티켓팅, C.A.S.T.가 함께합니다.
+      </p>
+      <div class="flex gap-3 justify-center sm:justify-start">
+        <a href="/usr/concert/list" class="btn btn-primary btn-lg rounded-xl px-8 font-black">공연 목록 보기</a>
+        <a href="/usr/review/list"  class="btn btn-ghost btn-lg rounded-xl font-semibold">커뮤니티</a>
+      </div>
     </div>
+
   </div>
 </section>
 

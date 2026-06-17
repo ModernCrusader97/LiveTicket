@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -61,16 +62,37 @@ public class UsrReservationController {
 
         List<Seat> allSeats = reservationService.getSeatsByScheduleId(scheduleId);
 
-        Map<String, List<Seat>> groupedSeats = new TreeMap<>();
+        // Group by grade first, then by rowName within each grade
+        Comparator<String> rowComparator = (a, b) -> {
+            try { return Integer.compare(Integer.parseInt(a), Integer.parseInt(b)); }
+            catch (NumberFormatException e) { return a.compareTo(b); }
+        };
+
+        Map<Long, Map<String, Object>> zoneMap = new LinkedHashMap<>();
         for (Seat seat : allSeats) {
-            groupedSeats.computeIfAbsent(seat.getRowName(), k -> new ArrayList<>()).add(seat);
+            long gradeId = seat.getGradeId();
+            if (!zoneMap.containsKey(gradeId)) {
+                Map<String, Object> zone = new LinkedHashMap<>();
+                zone.put("gradeName", seat.getExtra__gradeName());
+                zone.put("gradePrice", seat.getExtra__price());
+                zone.put("rows", new TreeMap<>(rowComparator));
+                zoneMap.put(gradeId, zone);
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, List<Seat>> rows = (Map<String, List<Seat>>) zoneMap.get(gradeId).get("rows");
+            rows.computeIfAbsent(seat.getRowName(), k -> new ArrayList<>()).add(seat);
         }
-        for (List<Seat> rowSeats : groupedSeats.values()) {
-            rowSeats.sort(Comparator.comparingInt(Seat::getColNumber));
+        for (Map<String, Object> zone : zoneMap.values()) {
+            @SuppressWarnings("unchecked")
+            Map<String, List<Seat>> rows = (Map<String, List<Seat>>) zone.get("rows");
+            for (List<Seat> rowSeats : rows.values()) {
+                rowSeats.sort(Comparator.comparingInt(Seat::getColNumber));
+            }
         }
+        List<Map<String, Object>> seatZones = new ArrayList<>(zoneMap.values());
 
         model.addAttribute("loginedMemberId", rq.getLoginedMemberId());
-        model.addAttribute("groupedSeats", groupedSeats);
+        model.addAttribute("seatZones", seatZones);
         model.addAttribute("seats", allSeats);
         model.addAttribute("scheduleId", scheduleId);
 

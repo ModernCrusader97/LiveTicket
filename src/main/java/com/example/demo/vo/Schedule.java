@@ -18,11 +18,14 @@ public class Schedule {
     private int totalSeats;
     private int maxRows;
     private int maxCols;
-    private int price;
     private String body;
     private String status;
     private String regDate;
     private String updateDate;
+
+    // joined from seatGrade
+    private int extra__minPrice;
+    private int extra__maxPrice;
 
     // joined from concert table
     private String extra__concertTitle;

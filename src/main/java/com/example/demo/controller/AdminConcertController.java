@@ -29,6 +29,7 @@ public class AdminConcertController {
 
     @GetMapping("/admin/concert/create")
     public String showCreateForm(Model model) {
+        model.addAttribute("allArtists", concertService.getAllArtists());
         return "admin/concert/create";
     }
 
@@ -41,7 +42,6 @@ public class AdminConcertController {
             @RequestParam(defaultValue = "0") int totalSeats,
             @RequestParam(defaultValue = "10") int maxRows,
             @RequestParam(defaultValue = "10") int maxCols,
-            @RequestParam(defaultValue = "0") int price,
             @RequestParam(required = false) List<String> gradeNames,
             @RequestParam(required = false) List<Integer> gradePrices,
             @RequestParam(required = false) List<Integer> gradeRowCounts,
@@ -54,7 +54,7 @@ public class AdminConcertController {
             Model model) {
 
         ResultData rd = concertAdminService.createConcert(title, posterFile,
-                bookingStartAt, body, totalSeats, maxRows, maxCols, price,
+                bookingStartAt, body, totalSeats, maxRows, maxCols,
                 gradeNames, gradePrices, gradeRowCounts, disabledSeatsStr, schedulesData,
                 newArtistNames, newArtistNotes, newArtistTempIds, artistFiles);
 
@@ -148,7 +148,6 @@ public class AdminConcertController {
             @RequestParam(required = false) Integer totalSeats,
             @RequestParam(required = false) Integer maxRows,
             @RequestParam(required = false) Integer maxCols,
-            @RequestParam(required = false) Integer price,
             @RequestParam(required = false) String body,
             @RequestParam(required = false) List<String> gradeNames,
             @RequestParam(required = false) List<Integer> gradePrices,
@@ -157,7 +156,7 @@ public class AdminConcertController {
             Model model) {
 
         ResultData rd = concertAdminService.updateSchedule(scheduleId, title, performDate, startAt,
-                totalSeats, maxRows, maxCols, price, body, gradeNames, gradePrices, gradeRowCounts, disabledSeatsStr);
+                totalSeats, maxRows, maxCols, body, gradeNames, gradePrices, gradeRowCounts, disabledSeatsStr);
         if (rd.isFail()) {
             model.addAttribute("msg", rd.getMsg());
             return "admin/concert/edit";

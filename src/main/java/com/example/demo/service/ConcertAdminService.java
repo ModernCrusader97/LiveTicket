@@ -44,7 +44,7 @@ public class ConcertAdminService {
     @Transactional
     public ResultData createConcert(String title, MultipartFile posterFile,
             String bookingStartAt, String body,
-            int totalSeats, int maxRows, int maxCols, int price,
+            int totalSeats, int maxRows, int maxCols,
             List<String> seatGradeNames, List<Integer> seatGradePrices, List<Integer> gradeRowCounts,
             String disabledSeatsStr, String schedulesData,
             List<String> newArtistNames, List<String> newArtistNotes,
@@ -112,7 +112,7 @@ public class ConcertAdminService {
                 .posterImg(posterFileName)
                 .startDate(calculatedStartDate)
                 .endDate(calculatedEndDate)
-                .bookingStartAt(bookingStartAt)
+                .bookingStartAt(bookingStartAt != null ? bookingStartAt.replace("T", " ") : null)
                 .body(body)
                 .status("DRAFT")
                 .build();
@@ -127,7 +127,7 @@ public class ConcertAdminService {
 
         // Create schedules with seats and castings
         for (Map<String, Object> sch : schedules) {
-            String schPerformDate = sch.getOrDefault("performDate", "").toString();
+            String schPerformDate = sch.getOrDefault("performDate", "").toString().replace("T", " ");
             String schTitle = sch.getOrDefault("title", "").toString();
             String schBody = sch.getOrDefault("body", "").toString();
 
@@ -139,7 +139,6 @@ public class ConcertAdminService {
                     .totalSeats(totalSeats)
                     .maxRows(maxRows)
                     .maxCols(safeMaxCols)
-                    .price(price)
                     .body(schBody)
                     .status("DRAFT")
                     .build();
@@ -267,7 +266,7 @@ public class ConcertAdminService {
                 .posterImg(posterFileName != null ? posterFileName : existing.getPosterImg())
                 .startDate(existing.getStartDate())
                 .endDate(existing.getEndDate())
-                .bookingStartAt(bookingStartAt)
+                .bookingStartAt(bookingStartAt != null ? bookingStartAt.replace("T", " ") : null)
                 .body(body)
                 .build();
         concertRepository.updateConcert(updated);
@@ -276,7 +275,7 @@ public class ConcertAdminService {
 
     @Transactional
     public ResultData updateSchedule(long scheduleId, String title, String performDate, String startAt,
-            Integer totalSeats, Integer maxRows, Integer maxCols, Integer price, String body,
+            Integer totalSeats, Integer maxRows, Integer maxCols, String body,
             List<String> seatGradeNames, List<Integer> seatGradePrices, List<Integer> gradeRowCounts,
             String disabledSeatsStr) {
 
@@ -289,12 +288,11 @@ public class ConcertAdminService {
                 .id(scheduleId)
                 .concertId(existing.getConcertId())
                 .title(title)
-                .performDate(performDate)
+                .performDate(performDate != null ? performDate.replace("T", " ") : null)
                 .startAt(startAt)
                 .totalSeats(totalSeats != null ? totalSeats : existing.getTotalSeats())
                 .maxRows(maxRows != null ? maxRows : existing.getMaxRows())
                 .maxCols(maxCols != null ? Math.min(maxCols, MAX_SEAT_DIMENSION) : existing.getMaxCols())
-                .price(price != null ? price : existing.getPrice())
                 .body(body)
                 .build();
         scheduleRepository.updateSchedule(updated);

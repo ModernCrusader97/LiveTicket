@@ -76,7 +76,14 @@
               </c:choose>
               <span class="font-semibold text-white">${s.title}</span>
               <span class="text-slate-400 text-sm font-mono">${s.performDate}</span>
-              <span class="text-slate-500 text-sm ml-auto">${s.price}원 / ${s.totalSeats}석</span>
+              <span class="text-slate-500 text-sm ml-auto">
+                <c:choose>
+                  <c:when test="${s.extra__minPrice > 0 && s.extra__minPrice == s.extra__maxPrice}">${s.extra__minPrice}원</c:when>
+                  <c:when test="${s.extra__minPrice > 0}">${s.extra__minPrice}~${s.extra__maxPrice}원</c:when>
+                  <c:otherwise>가격미설정</c:otherwise>
+                </c:choose>
+                / ${s.totalSeats}석
+              </span>
             </summary>
             <div class="p-5 border-t border-slate-800">
               <form action="/admin/schedule/modify" method="post" class="space-y-4">
@@ -92,11 +99,6 @@
                     <label class="label text-xs text-slate-400">공연일시</label>
                     <input type="datetime-local" name="performDate" value="${s.performDate}"
                            class="input input-bordered w-full bg-slate-950 text-white font-mono">
-                  </div>
-                  <div>
-                    <label class="label text-xs text-slate-400">가격 (원)</label>
-                    <input type="number" name="price" value="${s.price}"
-                           class="input input-bordered w-full bg-slate-950 text-white">
                   </div>
                   <div>
                     <label class="label text-xs text-slate-400">총 좌석 수</label>

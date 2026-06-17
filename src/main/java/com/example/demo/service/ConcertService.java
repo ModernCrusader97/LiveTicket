@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.ConcertRepository;
@@ -71,6 +72,10 @@ public class ConcertService {
         return scheduleRepository.getAllArtistsByConcertId(concertId);
     }
 
+    public List<Artist> getAllArtists() {
+        return concertRepository.getAllArtists();
+    }
+
     public List<Seat> getRemainingSeats(long scheduleId) {
         return scheduleRepository.getRemainingSeats(scheduleId);
     }
@@ -89,5 +94,15 @@ public class ConcertService {
 
     public List<Map<String, Object>> getSeatGradesByScheduleId(long scheduleId) {
         return scheduleRepository.getSeatGradesByScheduleId(scheduleId);
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void scheduledAutoUpdateConcertStatus() {
+        try {
+            concertRepository.autoOpenConcerts();
+            concertRepository.autoCloseConcerts();
+        } catch (Exception e) {
+            System.err.println("콘서트 상태 자동 업데이트 오류: " + e.getMessage());
+        }
     }
 }
